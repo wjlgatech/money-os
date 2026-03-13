@@ -141,7 +141,35 @@ SUMMARY TABLE:
 
 Show the total 20-year compound value of fixing all leaks: "Fixing these leaks and investing the savings generates $XXX,XXX over 20 years."
 
+After presenting results, offer: "Want a Leak Report card showing what we found? It's designed to share without revealing personal details."
+If yes, generate an HTML artifact based on the template at `skills/share-cards/references/leak-report-card-template.html`, customized with their annual leak total, categories found, and 20-year compound value.
+
 Always chain: "Want me to help fix the top leak right now? Or run a cash flow analysis to see where the recovered money should go?"
+
+## Profile Integration
+
+Before starting analysis, check for the user's financial profile:
+
+1. Read `profile/financial-identity.md` for tax bracket, filing status (affects deduction/credit scanning)
+2. Read `profile/holdings.md` for accounts, holdings, and fee structure (affects fee drag and asset location leaks)
+
+If profile exists:
+- Use stored identity to identify missed deductions/credits specific to their situation
+- Reference holdings to flag fee drag opportunities
+- Use prior history to avoid re-scanning same leaks repeatedly
+
+If profile doesn't exist, proceed normally and offer to save:
+- Account structure and fee details discovered
+- Identified leaks that are being fixed
+- Baseline "leak score" for progress tracking
+
+After completing analysis, append a summary to `profile/history.md`:
+```
+## [Date] — Wealth Leak Scan
+- **Action**: [Comprehensive scan / Specific category scan]
+- **Key findings**: [Total annual leak value, number of leaks found by category, biggest single leak]
+- **Recommendations**: [Highest-value leaks to fix first, estimated 20-year impact if all fixed]
+```
 
 ## Important Notes
 

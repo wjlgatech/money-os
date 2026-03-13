@@ -120,6 +120,34 @@ TOTAL GENERATIONAL IMPACT:
 
 Always chain: "Want me to set up tracking for your generational plan in the weekly pulse?"
 
+## Profile Integration
+
+Before starting analysis, check for the user's financial profile:
+
+1. Read `profile/financial-identity.md` for age, state, and family information (children, dependents)
+2. Read `profile/holdings.md` for current wealth and account types
+3. Read `profile/goals.md` for estate planning or generational wealth goals (if established)
+
+If profile exists:
+- Use family information to tailor generational plan to actual children/family members
+- Use state info for 529 tax deduction eligibility
+- Reference holdings to show wealth transfer mechanics using actual accounts
+- Avoid re-asking for child ages, family structure
+
+If profile doesn't exist, proceed normally and offer to save:
+- Number and ages of children or beneficiaries
+- Current education savings (529, custodial accounts)
+- Estate size estimate and state of residence
+- Any existing trusts or planning documents
+
+After completing plan, append a summary to `profile/history.md`:
+```
+## [Date] — Generational Wealth Plan
+- **Action**: [Plan created / Plan updated for new child / Existing plan reviewed]
+- **Key findings**: [Total generational impact projected, highest-value vehicles identified, tax optimization opportunities]
+- **Recommendations**: [Priority actions by child age, annual contribution targets, next review date]
+```
+
 ## Important Notes
 
 - Always flag: "This involves estate and tax planning — consult an estate attorney and CPA for implementation"

@@ -95,6 +95,38 @@ COMMON MISTAKES TO AVOID:
   ⚠ [Another common mistake]
 ```
 
+## Profile Integration
+
+Before starting analysis, check for the user's financial profile:
+
+1. Read `profile/financial-identity.md` for full identity context (age, filing status, dependents, income — all relevant to life events)
+2. Read `profile/holdings.md` for account structure and balances (affects options available)
+3. Read `profile/goals.md` for goals that may change due to life event
+4. Read `profile/history.md` for prior life events (to provide continuity and recall context)
+
+If profile exists:
+- Reference their known situation to personalize action plan
+- Flag changes caused by the life event (filing status, dependents, income, location)
+- Prioritize actions based on their specific financial situation
+- Avoid re-asking for basic context already captured
+
+If profile doesn't exist or needs updates:
+- Ask for identity details relevant to the specific life event
+- Offer to create/update profile after event-related decisions are handled
+
+After generating action plan, append a summary to `profile/history.md`:
+```
+## [Date] — [Event Type]
+- **Action**: [Life event - marriage, job change, inheritance, etc.]
+- **Key findings**: [Immediate financial implications, deadline-driven actions identified]
+- **Recommendations**: [Top 3 actions to take this week, related skills to chain]
+```
+
+Also update relevant profile sections:
+- If event changes identity (marriage, location move) → update `profile/financial-identity.md`
+- If event involves assets (inheritance, home purchase) → update `profile/holdings.md`
+- If event changes goals → update `profile/goals.md`
+
 ## Important Notes
 
 - Life events are emotional. Lead with empathy, then action.

@@ -72,9 +72,36 @@ Estimated Tax Savings: $X,XXX - $X,XXX (depending on bracket)
 
 Include a "Gains to Offset" section showing any realized gains from the current tax year that these losses can offset.
 
+## Profile Integration
+
+Before starting analysis, check for the user's financial profile:
+
+1. Read `profile/financial-identity.md` for tax bracket (affects how much tax losses are worth)
+2. Read `profile/holdings.md` for full holdings across all accounts, including cost basis
+
+If profile exists:
+- Use stored holdings to avoid re-requesting account positions
+- Calculate tax savings using their specific marginal rate
+- Flag any cross-account wash sale risks
+- Reference prior harvests from history to track carryforward losses
+
+If profile doesn't exist, proceed normally and offer to save:
+- Complete holdings snapshot with cost basis
+- Realized gains/losses from current tax year
+- Tax loss carryforwards from prior years (if any)
+
+After completing analysis, append a summary to `profile/history.md`:
+```
+## [Date] — Tax-Loss Harvest Scan
+- **Action**: [Routine harvest / Response to specific gains]
+- **Key findings**: [Total harvestable losses, estimated tax savings at user's bracket, wash sale risks identified]
+- **Recommendations**: [Highest-value harvests to execute, replacement position suggestions]
+```
+
 ## Important Rules
 
 - NEVER harvest a loss just for tax purposes if the position is a core holding you'd rebuy immediately — the wash sale rule eliminates the benefit
 - Harvesting makes most sense for dead weight positions you wouldn't rebuy
 - Always note: "Tax situations are individual. Consult a tax professional for advice specific to your situation."
+- Disclaimer: "This is tax-loss harvesting analysis, not tax advice. Verify all calculations with a CPA before executing trades."
 - If total portfolio > $250k or total harvest > $10k, strongly recommend CPA review

@@ -154,6 +154,33 @@ After recommendation, always suggest the next skill to execute:
 - Lump sum vs DCA → chain to rebalancing-plan for execution
 - Refinance → chain to cash-flow-intel (new payment routing)
 
+## Profile Integration
+
+Before starting analysis, check for the user's financial profile:
+
+1. Read `profile/financial-identity.md` for tax bracket, age (critical for decision modeling)
+2. Read `profile/holdings.md` for relevant holdings and account types (if decision involves portfolio)
+3. Read `profile/goals.md` for relevant goals and timeline (contextualizes time horizon for decision)
+
+If profile exists:
+- Use their specific tax bracket in all calculations (critical for sell-vs-hold, Roth conversion decisions)
+- Reference holdings for context on investment decisions
+- Use stated goals to weight decision outcomes appropriately
+- Avoid re-asking for tax situation or timeline
+
+If profile doesn't exist, proceed normally and offer to save:
+- Their marginal tax bracket (fundamental to most financial decisions)
+- Time horizon for the decision
+- Key financial details that affect the choice
+
+After completing analysis, append a summary to `profile/history.md`:
+```
+## [Date] — Decision Model
+- **Action**: [Decision analyzed - e.g., Roth conversion, Rent vs Buy]
+- **Key findings**: [Recommended option, expected value gap between options, sensitivity analysis]
+- **Recommendations**: [Next step to execute on recommendation, related skills to chain]
+```
+
 ## Important Notes
 
 - Always show the math, not just the conclusion

@@ -125,8 +125,48 @@ If the user wants recurring pulses:
 - Can also do monthly deep-dive versions with more analysis
 - Hook to scheduled tasks if available
 
+## Profile Integration
+
+Before starting analysis, check for the user's financial profile:
+
+1. Read `profile/financial-identity.md` for identity context (name, age for tone-setting)
+2. Read `profile/holdings.md` for current portfolio values
+3. Read `profile/goals.md` for Freedom Number and stated goals (for progress narrative)
+4. Read `profile/history.md` for prior pulses and historical context
+
+If profile exists:
+- Reference prior week's pulse to show week-over-week changes
+- Use Freedom Number to contextualize progress
+- Compare to stated goals for relevance
+- Build narrative arc by showing progress over time
+
+If this is the first pulse and profile exists:
+- Use baseline data from profile to establish starting point
+- Set baseline comparisons for future pulses
+
+If profile doesn't exist, proceed normally and offer to save:
+- Portfolio snapshot and baseline net worth
+- Freedom Number target (if user establishes one)
+- Weekly pulse going forward to track progress
+
+After generating the pulse, append a summary to `profile/history.md`:
+```
+## [Date] — Weekly Pulse
+- **Action**: [Routine pulse / Response to specific event]
+- **Key findings**: [Net worth change, major trades or tax events, freedom progress]
+- **Recommendations**: [Next focus area, upcoming action items, milestones]
+```
+
+## Important Notes
+
+- Disclaimer: "This is analytical commentary, not financial advice. Verify all figures independently."
+- Never present projected returns as guaranteed outcomes
+- Always distinguish between realized gains/losses and unrealized changes
+
 ## Output Format
 
 Deliver as clean markdown text in conversation. If the user wants a file, generate as .md.
+
+After generating the pulse, offer: "Want a Pulse Card for this week? Shows your progress streak without personal details."
 
 Always end with: "Want to drill into any section? Or run a full portfolio health check?"

@@ -77,6 +77,12 @@ Before presenting the plan, verify:
 - What happens to the portfolio if the thesis is WRONG?
 - Are there contrarian positions worth keeping as hedges?
 
+## Important Notes
+
+- Disclaimer: "This is analytical modeling based on a stated thesis, not investment advice. No thesis is guaranteed — always maintain diversification."
+- Never present trade recommendations as certainties
+- Always show what happens if the thesis is wrong
+
 Always include a "What if the thesis is wrong?" section with specific risks.
 
 ## Output Format
@@ -106,6 +112,30 @@ TRADE SEQUENCE:
 
 THESIS RISK FACTORS:
 - If [assumption] is wrong: [impact on portfolio]
+```
+
+## Profile Integration
+
+Before starting analysis, check for the user's financial profile:
+
+1. Read `profile/holdings.md` for complete current holdings (needed for thesis alignment analysis)
+
+If profile exists:
+- Use stored holdings to avoid re-requesting account positions
+- Flag positions that appear in profile but don't fit the thesis
+- Reference prior theses from history (if any) to show evolution of strategy
+- Provide updated trade sequence based on latest holdings data
+
+If profile doesn't exist:
+- Request complete holdings snapshot for analysis
+- Offer to save holdings and thesis alignment for next check
+
+After completing analysis, append a summary to `profile/history.md`:
+```
+## [Date] — Thesis Alignment
+- **Action**: [Thesis analyzed - include thesis source/name]
+- **Key findings**: [Alignment score, top 2 gaps, biggest unaligned positions]
+- **Recommendations**: [Highest-priority trades, estimated impact of full alignment, thesis shelf life]
 ```
 
 ## Important Notes

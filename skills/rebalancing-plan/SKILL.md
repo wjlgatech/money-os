@@ -91,6 +91,31 @@ Critical: Do NOT recommend selling a stock at a loss and buying a "substantially
 - Selling ARKK and buying individual ARKK holdings = generally NOT a wash sale
 - Selling a stock in taxable and buying same stock in Roth within 30 days = wash sale
 
+## Profile Integration
+
+Before starting analysis, check for the user's financial profile:
+
+1. Read `profile/financial-identity.md` for tax bracket (affects sell sequencing)
+2. Read `profile/holdings.md` for full holdings, account types, and cost basis data
+
+If profile exists:
+- Use stored holdings as baseline
+- Incorporate user's known tax situation into sequencing recommendations
+- Avoid re-requesting account structure data
+
+If profile doesn't exist or is incomplete, proceed normally and offer to save:
+- Current holdings with account types and cost basis
+- Target allocation (if user defines one)
+- Realized/unrealized gains summary for tax planning
+
+After completing analysis, append a summary to `profile/history.md`:
+```
+## [Date] — Rebalancing Plan
+- **Action**: [Reason for rebalancing - portfolio health finding, drift from target, etc.]
+- **Key findings**: [Current allocation issues, tax impact estimate, number of trades proposed]
+- **Recommendations**: [Execution timeline, biggest tax-saving moves, highest-priority trades]
+```
+
 ## Important Notes
 
 - Frame all output as analytical options, not financial advice

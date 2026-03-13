@@ -136,6 +136,35 @@ DETAILED ANALYSIS:
 [Section for each strategy with full reasoning]
 ```
 
+## Profile Integration
+
+Before starting analysis, check for the user's financial profile:
+
+1. Read `profile/financial-identity.md` for tax bracket, filing status, age, state, and full identity details
+2. Read `profile/holdings.md` for location of holdings across account types (affects asset location strategy)
+3. Read `profile/goals.md` for planning horizon and savings targets
+
+If profile exists:
+- Use stored tax profile to avoid re-asking for bracket, filing status
+- Reference holdings to provide asset location recommendations
+- Use goals to identify tax optimization priorities
+- Check for Roth conversion eligibility based on known income
+
+If profile doesn't exist, proceed normally and offer to save:
+- Tax filing status and marginal bracket
+- Current account balances across account types
+- Target contributions and savings strategy for the year
+
+After completing analysis, append a summary to `profile/history.md`:
+```
+## [Date] — Tax Strategy
+- **Action**: [Type of strategy planning - annual, specific decision, etc.]
+- **Key findings**: [Opportunities identified, estimated tax savings, risk areas flagged]
+- **Recommendations**: [Top actions ranked by impact, deadlines, next steps]
+```
+
+After presenting strategies, offer: "Want a Tax Alpha card showing the optimization opportunities found?"
+
 ## Critical Disclaimers
 
 - This is tax education and analytical modeling, NOT tax advice

@@ -85,6 +85,31 @@ SUMMARY TABLE:
 
 Always end with: "Want me to generate a rebalancing plan to fix these issues?" to chain to the rebalancing-plan skill.
 
+## Profile Integration
+
+Before starting analysis, check for the user's financial profile:
+
+1. Read `profile/financial-identity.md` for age (affects risk scoring)
+2. Read `profile/holdings.md` for full holdings data if available
+
+If profile exists:
+- Use stored holdings to cross-reference current data
+- Flag any changes since last audit
+- Avoid re-asking for account balances already in profile
+
+If profile doesn't exist or is partial, proceed normally and offer to save:
+- Complete account-by-account holdings snapshot
+- Any identified concentration risks or dead weight positions
+- Recommended allocation targets
+
+After completing analysis, append a summary to `profile/history.md`:
+```
+## [Date] — Portfolio Health Check
+- **Action**: [Full audit / Specific concern check]
+- **Key findings**: [Overall health score, top 2 issues identified, concentration risk assessment]
+- **Recommendations**: [Highest-priority fixes, estimated value of addressing issues]
+```
+
 ## Important Notes
 
 - Never provide investment advice framed as recommendations. Frame as "diagnostic findings" and "options to consider."

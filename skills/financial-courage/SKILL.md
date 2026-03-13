@@ -210,6 +210,38 @@ Bad examples (never use):
 [ENERGY: One-liner that makes them smile and feel capable]
 ```
 
+After the COURAGE conversation, offer: "Want a Courage Card to remember this moment? You can share it or keep it as a reminder."
+If yes, generate an HTML artifact based on the template at `skills/share-cards/references/courage-card-template.html`, customized with their original fear (anonymized), the pivotal number, and the hopeful tagline.
+
+## Profile Integration
+
+Before starting analysis, check for the user's financial profile:
+
+1. Read `profile/financial-identity.md` for basic context (to understand their situation)
+2. Read `profile/goals.md` for dream goals and aspirations (critical for "Reveal" step - what do they secretly want?)
+3. Read `profile/history.md` for progress narrative (to show how far they've come, celebrate small wins)
+
+If profile exists:
+- Use history to reference prior progress (even if it feels small)
+- Use goals to surface the dream they stopped allowing themselves to imagine
+- Personalize the transformation story to match their actual situation
+- Avoid re-asking for basic context they've already shared
+
+If profile doesn't exist:
+- Build profile together as part of the comeback process
+- Use the conversation to establish identity, situation, and dream goal
+- Offer to save this as starting point for ongoing support
+
+After the courage conversation, append to `profile/history.md`:
+```
+## [Date] — Financial Courage Session
+- **Action**: [Type of courage work - starting from zero, overcoming paralysis, etc.]
+- **Key findings**: [Their dream/goal identified, main blocker addressed, one-week win committed to]
+- **Recommendations**: [First action completed, next milestone, support mode chosen (hand-holding vs autopilot)]
+```
+
+Do NOT add financial numbers or sensitive details to history — focus on emotional progress and actions taken.
+
 ## Important Notes
 
 - This skill should be triggered proactively when OTHER skills detect distress signals

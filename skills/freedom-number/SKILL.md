@@ -145,7 +145,37 @@ TOP 3 ACCELERATION LEVERS
 NEXT MILESTONE: $X,XXX/month passive income (XX% of freedom)
 ```
 
+After presenting results, offer: "Want a Freedom Card you can save or share? It shows your progress without revealing personal details."
+If yes, generate an HTML artifact based on the template at `skills/share-cards/references/freedom-card-template.html`, customized with their actual freedom percentage, monthly target, and timeline.
+
 Always chain: "Want me to set up a weekly pulse to track your freedom progress? Or model a specific scenario?"
+
+## Profile Integration
+
+Before starting analysis, check for the user's financial profile:
+
+1. Read `profile/financial-identity.md` for age and income
+2. Read `profile/holdings.md` for current portfolio value
+3. Read `profile/goals.md` for Freedom Number target (if established)
+4. Read `profile/history.md` for prior Freedom Number calculations and refinements
+
+If profile exists, use these to pre-populate the analysis:
+- Pre-calculate current passive income streams using portfolio data
+- Compare current progress to prior calculations
+- Avoid re-asking for data already in profile
+
+If profile doesn't exist, proceed normally and offer to save:
+- The calculated Freedom Number and target age
+- Current passive income baseline
+- Monthly actions needed to reach freedom
+
+After completing analysis, append a summary to `profile/history.md`:
+```
+## [Date] — Freedom Number
+- **Action**: [What the user asked - revised estimate, new scenario, etc.]
+- **Key findings**: [Current passive income, Freedom Number tier chosen, years to freedom]
+- **Recommendations**: [Top acceleration levers identified, next milestone]
+```
 
 ## Important Notes
 

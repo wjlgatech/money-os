@@ -150,6 +150,29 @@ FORWARD-LOOKING ACTIONS:
 ESTIMATED POTENTIAL SAVINGS: $X,XXX — $XX,XXX
 ```
 
+## Profile Integration
+
+Before starting analysis, check for the user's financial profile:
+
+1. Read `profile/financial-identity.md` for filing status, age, state, and other identity details (to contextualize findings)
+
+If profile exists:
+- Use stored identity details to avoid re-asking for basic tax situation context
+- Flag any changes from profile (new income source, state change, etc.)
+- Reference profile in comparing current vs. prior tax situations
+
+If analyzing a return and new details emerge:
+- Ask if they want to update their financial identity with new information discovered
+- Note: do not store specific return details in profile for privacy (only update identity/structure info)
+
+After completing analysis, append a summary to `profile/history.md`:
+```
+## [Date] — Tax Return Analysis
+- **Action**: [Tax year reviewed, type of analysis]
+- **Key findings**: [Most important missed opportunity, tax bracket confirmed, filing status assessment]
+- **Recommendations**: [Top action to implement before next tax year, key deductions/credits to track]
+```
+
 ## Important Notes
 
 - NEVER claim certainty about tax outcomes — always frame as "potential" or "worth investigating with your tax professional"
@@ -157,3 +180,4 @@ ESTIMATED POTENTIAL SAVINGS: $X,XXX — $XX,XXX
 - If the return shows complexity beyond basic analysis (S-corp, trust, estate, international income), recommend a CPA
 - Always recommend the user verify findings with a qualified tax professional before amending returns
 - State tax analysis is OUT OF SCOPE unless specifically requested (too much variation)
+- Disclaimer: "This is tax return analysis, not tax advice. Always verify findings with a qualified tax professional before amending returns."

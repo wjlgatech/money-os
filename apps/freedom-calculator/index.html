@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What's Your Freedom Number? | Money OS</title>
+<meta name="description" content="Calculate your Freedom Number — the exact monthly passive income where work becomes a choice, not a requirement. Free. No signup. 60 seconds.">
+<meta property="og:title" content="What's Your Freedom Number?">
+<meta property="og:description" content="Find out when work becomes optional. 60-second calculator. No signup required.">
+<meta property="og:type" content="website">
+<style>
+  :root {
+    --bg-primary: #0f0f1a;
+    --bg-secondary: #1a1a2e;
+    --bg-tertiary: #16213e;
+    --accent-blue: #63b3ed;
+    --accent-teal: #4fd1c5;
+    --accent-purple: #b794f4;
+    --text-primary: #e8e8e8;
+    --text-secondary: rgba(255,255,255,0.6);
+    --text-muted: rgba(255,255,255,0.35);
+    --surface: rgba(255,255,255,0.04);
+    --border: rgba(255,255,255,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+    line-height: 1.6;
+  }
+
+  .container {
+    max-width: 560px;
+    width: 100%;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .brand {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-size: 36px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-teal));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+
+  .subtitle {
+    font-size: 17px;
+    color: var(--text-secondary);
+    max-width: 440px;
+    margin: 0 auto;
+  }
+
+  .form-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+  }
+
+  .input-group {
+    margin-bottom: 24px;
+  }
+
+  .input-group:last-child {
+    margin-bottom: 0;
+  }
+
+  label {
+    display: block;
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+  }
+
+  .label-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: normal;
+  }
+
+  .input-wrapper {
+    position: relative;
+  }
+
+  .input-prefix {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 18px;
+    pointer-events: none;
+  }
+
+  input[type="number"],
+  input[type="text"] {
+    width: 100%;
+    padding: 14px 16px 14px 32px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.03);
+    color: var(--text-primary);
+    font-size: 18px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+    -moz-appearance: textfield;
+  }
+
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input:focus {
+    border-color: var(--accent-blue);
+  }
+
+  .no-prefix {
+    padding-left: 16px !important;
+  }
+
+  .row {
+    display: flex;
+    gap: 16px;
+  }
+
+  .row .input-group {
+    flex: 1;
+  }
+
+  button {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-teal));
+    color: var(--bg-primary);
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    font-family: inherit;
+  }
+
+  button:hover { opacity: 0.9; }
+  button:active { transform: scale(0.98); }
+
+  /* Results */
+  .results {
+    display: none;
+    margin-top: 32px;
+  }
+
+  .results.visible {
+    display: block;
+    animation: fadeIn 0.5s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px 32px;
+    text-align: center;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .result-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 30% 30%, rgba(99, 179, 237, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  .result-label {
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  .result-hero {
+    font-size: 56px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-teal));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+    margin-bottom: 8px;
+  }
+
+  .result-context {
+    font-size: 16px;
+    color: var(--text-secondary);
+  }
+
+  .progress-container {
+    margin: 28px 0;
+  }
+
+  .progress-bar-bg {
+    width: 100%;
+    height: 12px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-teal));
+    transition: width 1s ease;
+  }
+
+  .progress-text {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .metrics-row {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin: 24px 0;
+  }
+
+  .metric {
+    text-align: center;
+  }
+
+  .metric-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .metric-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .scenarios {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px;
+    margin-bottom: 24px;
+  }
+
+  .scenarios h3 {
+    font-size: 16px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  .scenario {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .scenario:last-child {
+    border-bottom: none;
+  }
+
+  .scenario-name {
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  .scenario-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--accent-teal);
+  }
+
+  .scenario.highlight {
+    background: rgba(79, 209, 197, 0.05);
+    margin: 0 -16px;
+    padding: 12px 16px;
+    border-radius: 8px;
+  }
+
+  .scenario.highlight .scenario-name {
+    color: var(--accent-teal);
+    font-weight: 600;
+  }
+
+  .cta-section {
+    background: var(--surface);
+    border: 1px solid rgba(99, 179, 237, 0.15);
+    border-radius: 20px;
+    padding: 32px;
+    text-align: center;
+  }
+
+  .cta-section h3 {
+    font-size: 20px;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+  }
+
+  .cta-section p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+
+  .cta-features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+
+  .cta-feature {
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: rgba(99, 179, 237, 0.08);
+    border: 1px solid rgba(99, 179, 237, 0.15);
+    font-size: 12px;
+    color: var(--accent-blue);
+  }
+
+  .cta-link {
+    display: inline-block;
+    padding: 12px 32px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-teal));
+    color: var(--bg-primary);
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 15px;
+    transition: opacity 0.2s;
+  }
+
+  .cta-link:hover { opacity: 0.9; }
+
+  .tagline-quote {
+    text-align: center;
+    font-size: 15px;
+    color: rgba(99, 179, 237, 0.6);
+    font-style: italic;
+    margin: 32px 0 16px;
+  }
+
+  footer {
+    text-align: center;
+    margin-top: 32px;
+    font-size: 12px;
+    color: var(--text-muted);
+    max-width: 440px;
+  }
+
+  @media (max-width: 560px) {
+    h1 { font-size: 28px; }
+    .result-hero { font-size: 44px; }
+    .row { flex-direction: column; gap: 0; }
+    .metrics-row { gap: 24px; }
+    .form-section, .result-card, .scenarios, .cta-section { padding: 28px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="brand">Money OS</div>
+    <h1>What's Your Freedom Number?</h1>
+    <p class="subtitle">Your Freedom Number is the monthly passive income where work becomes a choice — not a requirement. Find yours in 60 seconds.</p>
+  </header>
+
+  <div class="form-section">
+    <div class="input-group">
+      <label>Monthly expenses <span class="label-hint">(rough is fine)</span></label>
+      <div class="input-wrapper">
+        <span class="input-prefix">$</span>
+        <input type="number" id="expenses" placeholder="4,000" min="0">
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>Total savings & investments</label>
+      <div class="input-wrapper">
+        <span class="input-prefix">$</span>
+        <input type="number" id="savings" placeholder="50,000" min="0">
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>Monthly amount you save or invest</label>
+      <div class="input-wrapper">
+        <span class="input-prefix">$</span>
+        <input type="number" id="monthly" placeholder="500" min="0">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="input-group">
+        <label>Current age</label>
+        <input type="number" id="age" placeholder="30" min="18" max="80" class="no-prefix">
+      </div>
+      <div class="input-group">
+        <label>Target freedom age</label>
+        <input type="number" id="target" placeholder="55" min="25" max="90" class="no-prefix">
+      </div>
+    </div>
+
+    <button onclick="calculate()">Calculate My Freedom Number</button>
+  </div>
+
+  <div class="results" id="results">
+    <div class="result-card">
+      <div class="result-label">Your Freedom Number</div>
+      <div class="result-hero" id="freedomNumber">$5,200</div>
+      <div class="result-context">per month in passive income</div>
+
+      <div class="progress-container">
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressBar" style="width: 0%"></div>
+        </div>
+        <div class="progress-text">
+          <span>You're here</span>
+          <span id="progressPct">0%</span>
+          <span>Freedom</span>
+        </div>
+      </div>
+
+      <div class="metrics-row">
+        <div class="metric">
+          <div class="metric-value" id="freedomPortfolio">$1.56M</div>
+          <div class="metric-label">Freedom Portfolio</div>
+        </div>
+        <div class="metric">
+          <div class="metric-value" id="yearsToFreedom">18 yrs</div>
+          <div class="metric-label">Base Timeline</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scenarios">
+      <h3>What if you optimized?</h3>
+      <div class="scenario">
+        <span class="scenario-name">Current trajectory</span>
+        <span class="scenario-value" id="scenBase">18 years</span>
+      </div>
+      <div class="scenario highlight">
+        <span class="scenario-name">+$200/month savings</span>
+        <span class="scenario-value" id="scenPlus200">—</span>
+      </div>
+      <div class="scenario">
+        <span class="scenario-name">+$500/month savings</span>
+        <span class="scenario-value" id="scenPlus500">—</span>
+      </div>
+      <div class="scenario">
+        <span class="scenario-name">Find $3K/yr in leaks + invest</span>
+        <span class="scenario-value" id="scenLeaks">—</span>
+      </div>
+    </div>
+
+    <div class="tagline-quote">"Financial freedom is not about being rich. It's about having choices."</div>
+
+    <div class="cta-section">
+      <h3>Want the full picture?</h3>
+      <p>This calculator gives you the basics. Money OS gives you Monte Carlo simulations, tax-optimized strategies, wealth leak scanning ($2K-8K/yr in hidden drains), and a step-by-step plan. Free. Runs locally. Your data never leaves your computer.</p>
+      <div class="cta-features">
+        <span class="cta-feature">Monte Carlo Simulation</span>
+        <span class="cta-feature">Tax Strategy</span>
+        <span class="cta-feature">Wealth Leak Scan</span>
+        <span class="cta-feature">Portfolio Health Check</span>
+        <span class="cta-feature">Courage Coach</span>
+      </div>
+      <a href="https://github.com/user/money-os" class="cta-link">Get Money OS (Free Plugin)</a>
+    </div>
+  </div>
+
+  <footer>
+    This is an analytical calculator, not financial advice. Your actual path to financial freedom depends on many factors including market returns, inflation, taxes, and life events. Consult a financial advisor for personalized guidance.
+  </footer>
+</div>
+
+<script>
+function calculate() {
+  const expenses = parseFloat(document.getElementById('expenses').value) || 0;
+  const savings = parseFloat(document.getElementById('savings').value) || 0;
+  const monthly = parseFloat(document.getElementById('monthly').value) || 0;
+  const age = parseInt(document.getElementById('age').value) || 30;
+  const targetAge = parseInt(document.getElementById('target').value) || 55;
+
+  if (expenses <= 0) {
+    alert('Please enter your monthly expenses to calculate.');
+    return;
+  }
+
+  // Freedom Number = expenses * 1.3 (comfortable freedom with 30% buffer)
+  const freedomNumber = Math.round(expenses * 1.3);
+
+  // Freedom Portfolio = (Freedom Number * 12) / 0.04 (4% safe withdrawal rate)
+  const freedomPortfolio = freedomNumber * 12 / 0.04;
+
+  // Current passive income estimate (4% of current savings / 12)
+  const currentPassive = (savings * 0.04) / 12;
+
+  // Freedom progress
+  const progressPct = Math.min(100, Math.round((savings / freedomPortfolio) * 100));
+
+  // Years to freedom (compound growth at 8% avg return)
+  const r = 0.08 / 12; // monthly rate
+  const target = freedomPortfolio;
+  const yearsBase = calcYears(savings, monthly, r, target);
+  const yearsPlus200 = calcYears(savings, monthly + 200, r, target);
+  const yearsPlus500 = calcYears(savings, monthly + 500, r, target);
+  const yearsLeaks = calcYears(savings, monthly + 250, r, target); // $3K/yr = $250/mo
+
+  // Update DOM
+  document.getElementById('freedomNumber').textContent = '$' + freedomNumber.toLocaleString();
+  document.getElementById('freedomPortfolio').textContent = '$' + formatCompact(freedomPortfolio);
+  document.getElementById('progressPct').textContent = progressPct + '%';
+
+  const progressBar = document.getElementById('progressBar');
+  progressBar.style.width = '0%';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      progressBar.style.width = progressPct + '%';
+    });
+  });
+
+  document.getElementById('yearsToFreedom').textContent = formatYears(yearsBase);
+  document.getElementById('scenBase').textContent = formatYears(yearsBase);
+  document.getElementById('scenPlus200').textContent = formatYears(yearsPlus200) + timeSaved(yearsBase, yearsPlus200);
+  document.getElementById('scenPlus500').textContent = formatYears(yearsPlus500) + timeSaved(yearsBase, yearsPlus500);
+  document.getElementById('scenLeaks').textContent = formatYears(yearsLeaks) + timeSaved(yearsBase, yearsLeaks);
+
+  document.getElementById('results').classList.add('visible');
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function calcYears(principal, monthlyAdd, monthlyRate, target) {
+  if (monthlyAdd <= 0 && principal >= target) return 0;
+  if (monthlyAdd <= 0 && principal < target) return 99;
+
+  let balance = principal;
+  let months = 0;
+  const maxMonths = 100 * 12; // cap at 100 years
+
+  while (balance < target && months < maxMonths) {
+    balance = balance * (1 + monthlyRate) + monthlyAdd;
+    months++;
+  }
+
+  return months / 12;
+}
+
+function formatYears(years) {
+  if (years >= 99) return '99+ yrs';
+  if (years < 1) return '<1 yr';
+  const y = Math.floor(years);
+  const m = Math.round((years - y) * 12);
+  if (m === 0) return y + ' yrs';
+  return y + '.' + Math.round(years % 1 * 10) + ' yrs';
+}
+
+function timeSaved(base, optimized) {
+  const saved = base - optimized;
+  if (saved <= 0.5) return '';
+  if (saved < 1) return ' (-' + Math.round(saved * 12) + 'mo)';
+  return ' (-' + saved.toFixed(1) + 'yr)';
+}
+
+function formatCompact(num) {
+  if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
+  if (num >= 1000) return Math.round(num / 1000) + 'K';
+  return num.toLocaleString();
+}
+</script>
+
+</body>
+</html>

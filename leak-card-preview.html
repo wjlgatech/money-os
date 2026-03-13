@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Money OS — Leak Report</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+    color: #e8e8e8;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .card {
+    width: 480px;
+    padding: 48px 40px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 70% 70%, rgba(237, 137, 54, 0.06) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  .card-label {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(237, 137, 54, 0.7);
+    margin-bottom: 12px;
+  }
+
+  .hero-prefix {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 4px;
+  }
+
+  .hero-number {
+    font-size: 64px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #ed8936, #f6ad55);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+  }
+
+  .hero-suffix {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 4px;
+    margin-bottom: 32px;
+  }
+
+  .leak-categories {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin: 24px 0;
+  }
+
+  .leak-tag {
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: rgba(237, 137, 54, 0.1);
+    border: 1px solid rgba(237, 137, 54, 0.2);
+    font-size: 12px;
+    color: rgba(237, 137, 54, 0.8);
+  }
+
+  .compound-section {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .compound-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.35);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  .compound-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #4fd1c5;
+  }
+
+  .compound-note {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.3);
+    margin-top: 4px;
+  }
+
+  .tagline {
+    font-size: 15px;
+    color: rgba(237, 137, 54, 0.7);
+    font-style: italic;
+    margin-top: 28px;
+    line-height: 1.5;
+  }
+
+  .brand {
+    margin-top: 20px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.2);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="card-label">Wealth Leak Scan</div>
+
+  <div class="hero-prefix">I found</div>
+  <div class="hero-number">$4,200</div>
+  <div class="hero-suffix">per year in hidden wealth leaks</div>
+
+  <div class="leak-categories">
+    <span class="leak-tag">Fee Drag</span>
+    <span class="leak-tag">Idle Cash</span>
+    <span class="leak-tag">Zombie Subs</span>
+    <span class="leak-tag">Insurance</span>
+  </div>
+
+  <div class="compound-section">
+    <div class="compound-label">20-Year Compound Value</div>
+    <div class="compound-value">$184,000+</div>
+    <div class="compound-note">if fixed and invested at 8% avg return</div>
+  </div>
+
+  <div class="tagline">How much are you losing without knowing it?</div>
+
+  <div class="brand">Money OS</div>
+</div>
+</body>
+</html>

@@ -102,3 +102,32 @@ Always end with:
 2. Top 1-2 actions to take RIGHT NOW
 3. Signals to watch most closely this week/month
 4. "Next check recommended: [date]"
+
+## Profile Integration
+
+Before starting analysis, check for the user's financial profile:
+
+1. Read `profile/holdings.md` for current holdings and asset allocation (to contextualize macro signal impact)
+
+If profile exists:
+- Use holdings to explain which positions are most affected by each macro signal
+- Provide signal assessment filtered to relevant asset classes (e.g., if not in crypto, skip crypto-specific signals)
+- Reference prior macro checks from history for trend analysis
+
+If profile doesn't exist:
+- Provide general macro signal assessment
+- Offer to save holdings snapshot for next macro check
+
+After completing analysis, append a summary to `profile/history.md`:
+```
+## [Date] — Macro Radar Check
+- **Action**: [Routine check / Response to specific event]
+- **Key findings**: [Overall risk level, most relevant signals for user's portfolio, market regime assessment]
+- **Recommendations**: [Signals to watch most closely, portfolio positioning adjustments if any]
+```
+
+## Important Notes
+
+- Disclaimer: "This is macroeconomic commentary, not investment advice. Markets are unpredictable — no signal guarantees future outcomes."
+- Never present macro signals as trading instructions
+- Always note that individual circumstances should drive decisions, not macro headlines

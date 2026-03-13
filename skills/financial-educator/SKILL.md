@@ -167,6 +167,32 @@ LEARN NEXT:
 [1-2 related concepts that build on this]
 ```
 
+## Profile Integration
+
+Before starting analysis, check for the user's financial profile:
+
+1. Read `profile/history.md` for learning history (to track what they've already learned and avoid repeating)
+
+If profile exists:
+- Reference concepts they've encountered through other skills
+- Build progressively on foundations they've established
+- Adapt teaching depth based on concepts they've already mastered
+- Celebrate knowledge building over time
+
+If profile doesn't exist:
+- Teach at appropriate level for their stated experience
+- Start building learning history as you go
+- Offer to save learning progress for continuous context
+
+After teaching a concept, append to `profile/history.md`:
+```
+## [Date] — Learning: [Concept Name]
+- **Concept**: [What was taught]
+- **Context**: [Where it applied - what decision/action triggered the lesson]
+- **Application**: [What action the user took using this knowledge]
+- **Next concepts**: [Related topics to explore when ready]
+```
+
 ## Important Notes
 
 - Meet the user where they are — never talk down

@@ -120,7 +120,35 @@ Current pace: X.X years to Freedom Number
 With routing plan: X.X years (saves X.X years)
 ```
 
+After presenting results, offer: "Want a Cash Flow card showing your surplus routing? Designed for sharing without revealing income details."
+
 Always chain: "Want me to run a full wealth leak scan? Or calculate your Freedom Number?"
+
+## Profile Integration
+
+Before starting analysis, check for the user's financial profile:
+
+1. Read `profile/financial-identity.md` for income, benefits, and tax withholding information
+2. Read `profile/goals.md` for savings targets and Freedom Number (if established)
+
+If profile exists:
+- Use stored income data to avoid re-requesting paycheck details
+- Reference stated savings targets for comparison to current plan
+- Use Freedom Number for perspective on how surplus accelerates freedom timeline
+
+If profile doesn't exist, proceed normally and offer to save:
+- Monthly net income and all income sources
+- Major expense categories and amounts
+- Current savings rate and automatic contributions
+- Savings targets for the year
+
+After completing analysis, append a summary to `profile/history.md`:
+```
+## [Date] — Cash Flow Intel
+- **Action**: [Routine analysis / Response to income/expense change]
+- **Key findings**: [Current surplus or deficit, highest-impact spending adjustment identified, routing plan]
+- **Recommendations**: [Top priority routing destination, estimated 20-year impact, wealth leak fixes]
+```
 
 ## Important Notes
 
