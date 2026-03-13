@@ -1,0 +1,11 @@
+{
+  "name": "money-os",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Personal finance and investing operating system prototype",
+  "scripts": {
+    "dev": "node apps/control-center/server.js",
+    "start": "node apps/control-center/server.js",
+    "test:smoke": "node scripts/test-control-center.js"
+  }
+}

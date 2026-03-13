@@ -16,6 +16,8 @@ jobs:
       - name: Validate required files
         run: |
           test -f README.md
+          test -f ROADMAP.md
+          test -f ARCHITECTURE.md
           test -f SECURITY.md
           test -f CONTRIBUTING.md
           test -f LICENSE

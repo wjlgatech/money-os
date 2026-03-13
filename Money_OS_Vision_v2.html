@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Money OS v2 — Full Product Vision</title>
+<style>
+  :root {
+    --bg: #08080c;
+    --s1: #0e0e16;
+    --s2: #16162a;
+    --s3: #1e1e3a;
+    --border: #2a2a4e;
+    --text: #e4e4f0;
+    --dim: #7878a0;
+    --accent: #7c5cfc;
+    --accent2: #a78bfa;
+    --green: #10b981;
+    --green2: #34d399;
+    --red: #ef4444;
+    --orange: #f59e0b;
+    --cyan: #06b6d4;
+    --pink: #ec4899;
+    --gold: #fbbf24;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,system-ui,sans-serif; line-height:1.65; }
+  .c { max-width:1100px; margin:0 auto; padding:2.5rem 2rem; }
+  h1 { font-size:2.6rem; font-weight:800; background:linear-gradient(135deg,var(--accent),var(--cyan),var(--green)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:0.3rem; }
+  .tagline { font-size:1.2rem; color:var(--dim); margin-bottom:2.5rem; font-style:italic; }
+  h2 { font-size:1.6rem; color:var(--accent2); margin:2.5rem 0 1rem; padding-bottom:0.5rem; border-bottom:1px solid var(--border); }
+  h3 { font-size:1.1rem; color:var(--cyan); margin:1.2rem 0 0.6rem; }
+  p { margin-bottom:0.9rem; font-size:0.95rem; }
+  .section { background:var(--s1); border:1px solid var(--border); border-radius:14px; padding:1.8rem; margin-bottom:1.5rem; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+  .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; }
+  @media(max-width:800px){ .grid2,.grid3{grid-template-columns:1fr;} }
+
+  /* Maslow pyramid */
+  .pyramid { display:flex; flex-direction:column; align-items:center; gap:6px; margin:1.5rem 0; }
+  .pyr-level { text-align:center; padding:0.9rem 1.2rem; border-radius:10px; font-size:0.85rem; color:white; position:relative; }
+  .pyr-label { font-weight:700; font-size:0.95rem; }
+  .pyr-sub { font-size:0.75rem; opacity:0.85; margin-top:0.2rem; }
+  .pyr-app { font-size:0.7rem; opacity:0.6; margin-top:0.15rem; font-style:italic; }
+
+  /* Cards */
+  .vcard { background:var(--s2); border:1px solid var(--border); border-radius:10px; padding:1.3rem; }
+  .vcard-title { font-weight:700; font-size:1rem; margin-bottom:0.4rem; }
+  .vcard p { font-size:0.85rem; color:var(--dim); margin-bottom:0.5rem; }
+  .vcard .highlight { color:var(--green2); font-weight:600; font-size:0.85rem; }
+
+  /* Desire cards */
+  .desire { background:var(--s2); border-left:3px solid var(--gold); border-radius:0 10px 10px 0; padding:1.2rem 1.4rem; margin-bottom:1rem; }
+  .desire-title { font-weight:700; color:var(--gold); font-size:1rem; margin-bottom:0.3rem; }
+  .desire-hidden { color:var(--pink); font-size:0.85rem; font-style:italic; margin-bottom:0.4rem; }
+  .desire-how { color:var(--dim); font-size:0.85rem; }
+
+  /* Coach conversation */
+  .conv { background:var(--s2); border-radius:14px; padding:1.5rem; margin:1rem 0; font-size:0.85rem; }
+  .msg { padding:0.7rem 1rem; border-radius:12px; margin-bottom:0.6rem; max-width:85%; }
+  .msg-user { background:var(--s3); margin-left:auto; text-align:right; border-bottom-right-radius:4px; }
+  .msg-ai { background:linear-gradient(135deg,rgba(124,92,252,0.15),rgba(6,182,212,0.1)); border:1px solid rgba(124,92,252,0.2); border-bottom-left-radius:4px; }
+  .msg-label { font-size:0.7rem; color:var(--dim); margin-bottom:0.2rem; }
+  .msg-proactive { background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(6,182,212,0.1)); border:1px solid rgba(16,185,129,0.2); border-bottom-left-radius:4px; }
+
+  /* Architecture */
+  .arch-box { background:var(--s3); border:1px solid var(--border); border-radius:8px; padding:1rem; text-align:center; font-size:0.8rem; }
+  .arch-arrow { text-align:center; color:var(--dim); font-size:1.4rem; padding:0.3rem 0; }
+  .arch-highlight { border-color:var(--accent); background:linear-gradient(135deg,rgba(124,92,252,0.1),rgba(6,182,212,0.05)); }
+
+  /* Comparison */
+  .comp-table { width:100%; border-collapse:collapse; font-size:0.8rem; }
+  .comp-table th { background:var(--s2); padding:0.6rem; text-align:left; color:var(--accent2); border-bottom:2px solid var(--accent); }
+  .comp-table td { padding:0.5rem 0.6rem; border-bottom:1px solid var(--border); }
+  .old { color:var(--red); text-decoration:line-through; opacity:0.7; }
+  .new { color:var(--green2); font-weight:600; }
+
+  .callout { background:linear-gradient(135deg,rgba(124,92,252,0.08),rgba(6,182,212,0.08)); border:1px solid var(--accent); border-radius:12px; padding:1.8rem; margin:1.5rem 0; }
+  .callout-title { font-size:1.15rem; font-weight:700; color:var(--accent2); margin-bottom:0.6rem; }
+
+  .manifesto { background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(124,92,252,0.1)); border:2px solid var(--green); border-radius:14px; padding:2rem; margin:2rem 0; }
+  .manifesto h2 { border:none; margin-top:0; color:var(--green2); }
+
+  .stat-row { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin:1rem 0; }
+  .stat { background:var(--s2); border-radius:8px; padding:1rem; text-align:center; }
+  .stat-n { font-size:2rem; font-weight:800; background:linear-gradient(135deg,var(--accent),var(--green)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .stat-l { font-size:0.7rem; color:var(--dim); margin-top:0.2rem; }
+
+  pre { font-family:monospace; font-size:0.8rem; line-height:1.5; color:var(--text); overflow-x:auto; }
+  .dim { color:var(--dim); }
+  strong { color:var(--text); }
+  .g { color:var(--green2); }
+  .r { color:var(--red); }
+  .o { color:var(--orange); }
+</style>
+</head>
+<body>
+<div class="c">
+
+<h1>Money OS v2: The Financial Consciousness</h1>
+<p class="tagline">"Not an app you open. A mind that's always working for you."</p>
+
+<div class="stat-row">
+  <div class="stat"><div class="stat-n">87%</div><div class="stat-l">Americans financially anxious</div></div>
+  <div class="stat"><div class="stat-n">37%</div><div class="stat-l">Pursuing financial independence</div></div>
+  <div class="stat"><div class="stat-n">$0</div><div class="stat-l">Apps that create wealth proactively</div></div>
+</div>
+
+<!-- ============================================ -->
+<h2>Part 1: The Maslow Pyramid of Money — And Where Every App Fails</h2>
+<!-- ============================================ -->
+
+<div class="section">
+<p>People don't want a budgeting app. They don't want a portfolio tracker. They don't even want a tax optimizer. <strong>They want freedom, security, growth, meaning, and legacy.</strong> Money is just the mechanism.</p>
+
+<p>Here's the financial Maslow pyramid — and where every existing app stops:</p>
+
+<div class="pyramid">
+  <div class="pyr-level" style="width:40%; background:linear-gradient(135deg,var(--gold),#d97706);">
+    <div class="pyr-label">SELF-ACTUALIZATION</div>
+    <div class="pyr-sub">Purpose wealth: philanthropy, legacy, generational transfer, funding your life's work</div>
+    <div class="pyr-app">Apps here: NONE</div>
+  </div>
+  <div class="pyr-level" style="width:50%; background:linear-gradient(135deg,var(--pink),#be185d);">
+    <div class="pyr-label">ESTEEM & GROWTH</div>
+    <div class="pyr-sub">Wealth creation: new income streams, equity comp optimization, tax alpha, 10X compounding</div>
+    <div class="pyr-app">Apps here: Arta ($2M+ only)</div>
+  </div>
+  <div class="pyr-level" style="width:60%; background:linear-gradient(135deg,var(--accent),#6d28d9);">
+    <div class="pyr-label">BELONGING & STRATEGY</div>
+    <div class="pyr-sub">Portfolio intelligence: rebalancing, macro defense, thesis alignment, tax strategy</div>
+    <div class="pyr-app">Apps here: Money OS v1 (unique)</div>
+  </div>
+  <div class="pyr-level" style="width:70%; background:linear-gradient(135deg,var(--cyan),#0284c7);">
+    <div class="pyr-label">SAFETY & TRACKING</div>
+    <div class="pyr-sub">Investment tracking, net worth, retirement projections, emergency fund</div>
+    <div class="pyr-app">Apps here: Empower, Monarch, Fidelity — CROWDED</div>
+  </div>
+  <div class="pyr-level" style="width:80%; background:linear-gradient(135deg,var(--green),#047857);">
+    <div class="pyr-label">SURVIVAL & BUDGETING</div>
+    <div class="pyr-sub">Cash flow management, debt payoff, spending categories, bill tracking</div>
+    <div class="pyr-app">Apps here: YNAB, Monarch, Copilot, Cleo, Simplifi — COMMODITY</div>
+  </div>
+</div>
+
+<p><strong>Every existing app clusters at the bottom two levels.</strong> They help you not drown. None of them help you fly.</p>
+<p>Money OS v2 is designed to serve <strong>all five levels</strong> — but from the top down. It starts with your deepest desires and works backward to the daily cash flow decisions that serve them.</p>
+</div>
+
+<!-- ============================================ -->
+<h2>Part 2: The 7 Deep Desires Nobody Else Sees</h2>
+<!-- ============================================ -->
+
+<div class="section">
+<p>Current finance apps ask: "How much did you spend on groceries?" The right question is: <strong>"What are you building your life toward, and is your money accelerating or sabotaging that?"</strong></p>
+<p>Here are the 7 desires people carry but no app addresses:</p>
+</div>
+
+<div class="desire">
+  <div class="desire-title">1. TIME SOVEREIGNTY</div>
+  <div class="desire-hidden">Hidden desire: "I want to wake up and choose what to do today — not be told."</div>
+  <div class="desire-how"><strong>What apps do:</strong> Track spending. <strong>What Money OS does:</strong> Calculates your "Freedom Number" — the passive income level where work becomes optional. Tracks your daily progress toward it. Shows exactly which financial moves accelerate or delay it. "You're 7.3 years from time sovereignty. This Roth conversion moves it up by 4 months."</div>
+</div>
+
+<div class="desire">
+  <div class="desire-title">2. UNSHAKEABLE SECURITY</div>
+  <div class="desire-hidden">Hidden desire: "I never want to feel that gut-punch fear about money again."</div>
+  <div class="desire-how"><strong>What apps do:</strong> Show your balance. <strong>What Money OS does:</strong> Builds a multi-layered defense system — emergency fund adequacy, insurance gap analysis, portfolio stress tests, income diversification score. Runs Monte Carlo simulations on YOUR situation. "Even if markets drop 40% AND you lose your job, your family is covered for 14 months."</div>
+</div>
+
+<div class="desire">
+  <div class="desire-title">3. INVISIBLE WEALTH LEAKS</div>
+  <div class="desire-hidden">Hidden desire: "Am I losing money I don't even know about?"</div>
+  <div class="desire-how"><strong>What apps do:</strong> Categorize past spending. <strong>What Money OS does:</strong> Hunts for wealth leaks across your entire financial life — wrong tax lots costing you $800/year, subscriptions decaying into zombie charges, insurance you're overpaying for, cash sitting in 0% accounts when HYSA pays 4.5%, RSU cost basis errors losing you thousands. "I found 6 wealth leaks totaling $4,200/year. Here's how to plug each one today."</div>
+</div>
+
+<div class="desire">
+  <div class="desire-title">4. THE COMPOUND MACHINE</div>
+  <div class="desire-hidden">Hidden desire: "I want my money to work harder than I do."</div>
+  <div class="desire-how"><strong>What apps do:</strong> Show portfolio returns. <strong>What Money OS does:</strong> Designs and monitors your personal compound machine — optimal asset location (Roth vs. Traditional vs. Taxable), dividend reinvestment strategy, tax-free growth maximization, Mega Backdoor Roth pipeline. Visualizes the 20-year compound curve. "Your compound machine generated $847 in tax-free growth this month. At this rate, it produces $4,200/month by age 55."</div>
+</div>
+
+<div class="desire">
+  <div class="desire-title">5. STRATEGIC CONFIDENCE</div>
+  <div class="desire-hidden">Hidden desire: "I want to KNOW I'm making the right move, not just hope."</div>
+  <div class="desire-how"><strong>What apps do:</strong> Nothing. <strong>What Money OS does:</strong> For every financial decision, shows the 5-year impact with confidence intervals. "Selling TSLA now vs. holding 12 months: Scenario A saves $3,200 in taxes but misses potential 15-40% upside. Scenario B risks 30% drawdown but captures potential AI thesis. Here's the expected value calculation for YOUR bracket."</div>
+</div>
+
+<div class="desire">
+  <div class="desire-title">6. GENERATIONAL LEAP</div>
+  <div class="desire-hidden">Hidden desire: "I want my kids to start from a better position than I did."</div>
+  <div class="desire-how"><strong>What apps do:</strong> Open a custodial account (and forget it). <strong>What Money OS does:</strong> Designs a multi-generational wealth plan — 529 optimization, Roth IRA for kids with earned income, custodial account tax strategy, trust vs. direct inheritance modeling, education funding projections. "Your daughter's Roth IRA at $500/year from age 16 becomes $1.2M by age 65 — tax-free. That's a generational gift for $9,000 total."</div>
+</div>
+
+<div class="desire">
+  <div class="desire-title">7. MEANING-ALIGNED MONEY</div>
+  <div class="desire-hidden">Hidden desire: "I want my money to reflect who I am and what I believe in."</div>
+  <div class="desire-how"><strong>What apps do:</strong> ESG checkbox. <strong>What Money OS does:</strong> Aligns your entire financial life with your values — thesis-based portfolio construction (AI future, clean energy, whatever YOU believe), charitable giving optimization (stock donation vs. cash vs. DAF), impact measurement tied to your holdings. "Your portfolio generated $2,400 in tax-optimized charitable impact this year while growing 14%."</div>
+</div>
+
+<!-- ============================================ -->
+<h2>Part 3: Layers 1-2 Reimagined — Not Tracking, Consciousness</h2>
+<!-- ============================================ -->
+
+<div class="callout">
+  <div class="callout-title">The Paradigm Shift</div>
+  <p>YNAB asks: "Where did your money go?"<br>
+  Monarch asks: "What's your net worth?"<br>
+  <strong>Money OS asks: "Given who you are, what you want, and where the world is heading — what's the single most valuable thing you can do with your next dollar?"</strong></p>
+</div>
+
+<div class="section">
+<h3>Layer 1 Reimagined: Cash Flow Intelligence (Not Budgeting)</h3>
+
+<table class="comp-table">
+  <thead>
+    <tr><th>Old Paradigm (YNAB/Monarch)</th><th>Money OS v2</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="old">Categorize every transaction manually</td>
+      <td class="new">AI auto-categorizes AND rates each expense by "freedom impact"</td>
+    </tr>
+    <tr>
+      <td class="old">"You spent $340 on dining out"</td>
+      <td class="new">"Your dining spend is $340. Redirecting $150 to your Roth IRA adds $72K to your freedom number over 20 years. Want me to set that up?"</td>
+    </tr>
+    <tr>
+      <td class="old">Set budget categories, hope you stick to them</td>
+      <td class="new">Dynamic cash flow optimization: "You have $2,400 unallocated this month. Best use: $800 to harvest a tax loss (saves $240), $1,100 to Mega Backdoor Roth, $500 to emergency fund top-up."</td>
+    </tr>
+    <tr>
+      <td class="old">Subscription tracker lists your subscriptions</td>
+      <td class="new">Wealth Leak Scanner: "3 subscriptions unused in 90 days ($47/mo). Your car insurance is $180 above comparable quotes. Your savings account earns 0.01% when HYSA pays 4.5%. Total leaks: $4,200/year."</td>
+    </tr>
+    <tr>
+      <td class="old">Static monthly budget</td>
+      <td class="new">Adaptive income router: Automatically adjusts allocation when income changes. Got a bonus? "Your $5K bonus: $1,500 to offset RSU taxes, $2,000 to Roth (you have bracket room), $1,500 to emergency fund."</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="section">
+<h3>Layer 2 Reimagined: Financial Narrative (Not Dashboard)</h3>
+
+<table class="comp-table">
+  <thead>
+    <tr><th>Old Paradigm (Empower/Fidelity)</th><th>Money OS v2</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="old">Net worth number on a screen</td>
+      <td class="new">Weekly narrative: "Your net worth grew $4,200 this week. $1,800 from savings, $2,400 from markets. But TSLA concentration hit 41% — here's the tax-efficient trim to bring it back to 25%."</td>
+    </tr>
+    <tr>
+      <td class="old">Pie chart of asset allocation</td>
+      <td class="new">Living portfolio story: "Your portfolio is now 72% US Tech. If AI sentiment reverses (VIX currently 18, watch 25), your max drawdown is -38%. Crisis playbook ready. Want to pre-position?"</td>
+    </tr>
+    <tr>
+      <td class="old">Year-to-date returns</td>
+      <td class="new">Freedom progress report: "You're 34% toward your Freedom Number ($8,400/mo passive income). This year you added $14K in Roth contributions and $3,200 in tax alpha. At this pace: 8.7 years to freedom."</td>
+    </tr>
+    <tr>
+      <td class="old">Retirement calculator with one number</td>
+      <td class="new">Multi-scenario life modeling: "If you stay at current job: freedom at 52. If you negotiate $20K raise: 49. If you max Mega Backdoor Roth: 47. If you do all three: 44."</td>
+    </tr>
+    <tr>
+      <td class="old">Account list with balances</td>
+      <td class="new">Cross-account intelligence: "Your Traditional IRA has bonds (taxed as ordinary income). Your Roth has bonds too. Moving growth stocks to Roth and bonds to Traditional saves $1,800/year in taxes. Same holdings, different locations."</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============================================ -->
+<h2>Part 4: The 24/7 Financial Coach — How It Actually Works</h2>
+<!-- ============================================ -->
+
+<div class="section">
+<p>Money OS doesn't live in a separate app. <strong>It lives inside the AI you already talk to.</strong> Claude, ChatGPT, or any LLM becomes your financial consciousness when Money OS is installed.</p>
+
+<h3>Architecture: The Embedded Financial Mind</h3>
+
+<div style="display:flex; flex-direction:column; align-items:center; gap:0.5rem; margin:1.5rem 0;">
+  <div class="arch-box" style="width:90%;">
+    <strong>Your Daily Life</strong><br>
+    Conversations, decisions, life events, income changes, market moves
+  </div>
+  <div class="arch-arrow">▼</div>
+  <div class="arch-box arch-highlight" style="width:80%;">
+    <strong style="color:var(--accent2);">Money OS Layer (Always Listening)</strong><br>
+    Detects financial signals in context: job changes, purchases, tax events, market shifts, life milestones
+  </div>
+  <div class="arch-arrow">▼</div>
+  <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.8rem; width:80%;">
+    <div class="arch-box"><strong>Knowledge Engine</strong><br>Tax code, brackets, strategies, playbooks, rules</div>
+    <div class="arch-box"><strong>Your Financial State</strong><br>Portfolio, accounts, income, goals, tax bracket, family</div>
+    <div class="arch-box"><strong>Macro Radar</strong><br>VIX, yields, DXY, oil, gold, Fed, geopolitics</div>
+  </div>
+  <div class="arch-arrow">▼</div>
+  <div class="arch-box arch-highlight" style="width:80%;">
+    <strong style="color:var(--green2);">Proactive Intelligence</strong><br>
+    Generates personalized, actionable recommendations in real-time
+  </div>
+  <div class="arch-arrow">▼</div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.8rem; width:70%;">
+    <div class="arch-box"><strong>90% Auto-Execute</strong><br>Tax-loss harvest triggers, rebalance alerts, Roth conversion windows, DCA schedules</div>
+    <div class="arch-box"><strong>10% Human Decision</strong><br>Major allocation shifts, new strategies, life-changing moves</div>
+  </div>
+</div>
+
+<h3>Three Modes of Coaching</h3>
+</div>
+
+<div class="grid3">
+  <div class="vcard">
+    <div class="vcard-title" style="color:var(--cyan);">REACTIVE MODE</div>
+    <p>You ask, it answers with full context.</p>
+    <p class="highlight">"Should I sell my TSLA?" → Analyzes your cost basis, tax bracket, concentration risk, macro signals, and gives a specific recommendation with execution plan.</p>
+  </div>
+  <div class="vcard">
+    <div class="vcard-title" style="color:var(--green2);">PROACTIVE MODE</div>
+    <p>It notices something and alerts you.</p>
+    <p class="highlight">"Your VIX alert triggered (crossed 28). Crisis playbook recommends deploying 10% of cash reserves into broad market ETFs. Want me to generate the buy list?"</p>
+  </div>
+  <div class="vcard">
+    <div class="vcard-title" style="color:var(--gold);">AMBIENT MODE</div>
+    <p>It weaves financial intelligence into daily conversations.</p>
+    <p class="highlight">You mention getting a raise → "Congrats! Your new bracket changes the math on Roth conversions. Let me update your tax strategy. Also, increasing 401k by 3% captures $2,400 more in employer match."</p>
+  </div>
+</div>
+
+<div class="section" style="margin-top:1.5rem;">
+<h3>Example: A Week in Your Financial Life with Money OS</h3>
+
+<div class="conv">
+  <div class="msg msg-proactive">
+    <div class="msg-label">MONEY OS (Monday morning, proactive)</div>
+    Good morning. Weekly pulse: Your net worth is $241,800 (+$5,282 this week). Freedom progress: 34.2% (+0.3%). One action item: PLTR crossed your 15% position limit — trim $2,200 to stay within rules. Tax impact: $0 (it's in your Roth). Want me to queue the trade?
+  </div>
+  <div class="msg msg-user">
+    <div class="msg-label">YOU</div>
+    Yeah do it. Also, I'm thinking about buying a Tesla Model Y. Can I afford it?
+  </div>
+  <div class="msg msg-ai">
+    <div class="msg-label">MONEY OS</div>
+    PLTR trim queued. On the Model Y — let me run the numbers against your financial state:<br><br>
+    Cash on hand: $8,400 (below your 3-month target of $12,000).<br>
+    Monthly surplus after essentials: $1,850.<br>
+    Model Y payment (~$650/mo): reduces surplus to $1,200 and delays your freedom date by 2.1 years.<br><br>
+    Alternative: Buy in 6 months after building cash reserve to $15K. By then your RSU vest ($12K after tax) covers the down payment without touching investments.<br><br>
+    Also: the $7,500 EV credit is still available if your AGI stays under $150K. Your current projection: $147K. Adding overtime or a bonus could disqualify you. Want me to model the scenarios?
+  </div>
+</div>
+
+<div class="conv">
+  <div class="msg msg-proactive">
+    <div class="msg-label">MONEY OS (Wednesday, proactive)</div>
+    Tax opportunity detected: Your FUBO position is down $1,847. Harvesting this loss would offset $1,847 of your TSLA trim gains, saving $462 in taxes. The wash sale window is clear. Replacement: VGT (similar tech exposure, no wash sale risk). Execute?
+  </div>
+  <div class="msg msg-user">
+    <div class="msg-label">YOU</div>
+    Yes. Also what's happening with macro?
+  </div>
+  <div class="msg msg-ai">
+    <div class="msg-label">MONEY OS</div>
+    Tax-loss harvest executed. Here's your macro radar:<br><br>
+    VIX: 17.2 (green, calm)<br>
+    US 10Y: 4.31% (yellow, elevated but stable)<br>
+    Japan 10Y: 1.42% (watch — approaching 1.5% caution zone)<br>
+    DXY: 104.8 (neutral)<br>
+    Oil: $72 (green)<br><br>
+    No crisis playbook activation needed. But Japan 10Y bears watching — if it crosses 1.5%, I'll alert you with the yen carry trade unwind playbook. Your current exposure to Japan-sensitive positions: 4% (TSM). Low risk.
+  </div>
+</div>
+
+<div class="conv">
+  <div class="msg msg-proactive">
+    <div class="msg-label">MONEY OS (Friday, ambient — you mention something in conversation)</div>
+    I noticed you mentioned your daughter started her first part-time job. This unlocks something powerful: she now has earned income, which means she's eligible for a Roth IRA. If you contribute $500/year to a custodial Roth from age 16 to 22 ($3,500 total), at 10% average returns, it grows to $1.2M by age 65 — completely tax-free. That's a generational wealth transfer for $3,500. Want me to set up the plan?
+  </div>
+</div>
+
+<div class="conv">
+  <div class="msg msg-proactive">
+    <div class="msg-label">MONEY OS (Sunday evening, weekly wrap)</div>
+    Weekly report: You made 3 wealth-building moves this week.<br>
+    1. PLTR trim: reduced concentration risk by 3 points (score: 7.2 → 7.8/10)<br>
+    2. Tax-loss harvest: saved $462 in taxes<br>
+    3. Daughter's Roth plan: initiated ($1.2M projected lifetime value)<br><br>
+    Net impact: +$462 tax savings, +$1.2M projected generational wealth, portfolio risk improved.<br>
+    Freedom progress: 34.2% → 34.5% (+0.3%)<br><br>
+    This week's lesson: <em>Asset location matters as much as asset selection. Your Roth trim of PLTR was tax-free because of WHERE you held it. Always trim tax-advantaged first.</em>
+  </div>
+</div>
+</div>
+
+<!-- ============================================ -->
+<h2>Part 5: The 10X Educator — Inform, Inspire, Enable</h2>
+<!-- ============================================ -->
+
+<div class="section">
+<p>Current finance education is broken in three ways: it's generic (not personalized to your situation), it's abstract (not tied to action), and it's boring (not connected to your dreams). Money OS fixes all three.</p>
+</div>
+
+<div class="grid3">
+  <div class="vcard">
+    <div class="vcard-title" style="color:var(--cyan);">INFORM (Micro-Lessons in Context)</div>
+    <p>Every recommendation comes with a 30-second "why" that teaches a permanent skill.</p>
+    <p class="highlight">When harvesting a tax loss: "Quick concept — you're using a 'tax loss' to offset gains. You sell FUBO at a loss, buy VGT as replacement. IRS lets you deduct the loss against gains. Net effect: same portfolio exposure, $462 less in taxes. This works every year — it's compounding tax savings."</p>
+    <p>Not a lecture. A skill you earn by doing.</p>
+  </div>
+  <div class="vcard">
+    <div class="vcard-title" style="color:var(--gold);">INSPIRE (Connect Money to Dreams)</div>
+    <p>Every financial metric is translated into life impact.</p>
+    <p class="highlight">Not: "Your Roth IRA balance is $45,000."<br>
+    But: "Your Roth IRA is at $45,000. That's 18 months of your daughter's college tuition, growing tax-free. Or it's $3,750/year in passive income at age 60. Every $100 you add today becomes $1,745 in 30 years."</p>
+    <p>Money becomes tangible, emotional, meaningful.</p>
+  </div>
+  <div class="vcard">
+    <div class="vcard-title" style="color:var(--green2);">ENABLE (Dream → Plan → Execute)</div>
+    <p>Every dream gets decomposed into specific, scheduled financial actions.</p>
+    <p class="highlight">"I want to retire at 50" →<br>
+    Freedom Number: $8,400/mo passive income<br>
+    Current: $2,100/mo (25%)<br>
+    Gap: $6,300/mo in 18 years<br>
+    Plan: Max Roth ($7K/yr), Mega Backdoor ($36.5K/yr), Dividend growth portfolio, Tax alpha ($3K/yr reinvested)<br>
+    Probability of success: 78% (Monte Carlo, 10K simulations)</p>
+    <p>Dreams become engineering problems with solutions.</p>
+  </div>
+</div>
+
+<div class="section" style="margin-top:1.5rem;">
+<h3>The Teaching Loop: Learn by Doing</h3>
+<pre style="margin:1rem 0;">
+  ┌──────────────────────────────────────────────────────────────┐
+  │                                                              │
+  │   1. SITUATION ──► 2. RECOMMENDATION ──► 3. MICRO-LESSON    │
+  │        │                                        │            │
+  │        │              5. REINFORCE ◄── 4. ACTION             │
+  │        │                   │                    │            │
+  │        └───────────────────┘                    │            │
+  │                                                 │            │
+  │   "Your PLTR      "Trim in Roth    "Tax-free    "Executed   │
+  │    hit 15%"        first, $0 tax"   accounts     PLTR trim  │
+  │                                     shield       in Roth.   │
+  │                                     gains from   You saved  │
+  │                                     taxation"    $550 in    │
+  │                                                  taxes vs   │
+  │                                                  taxable."  │
+  └──────────────────────────────────────────────────────────────┘
+</pre>
+<p>Every action teaches. Every lesson is earned through real stakes. After 6 months with Money OS, you don't just have a better portfolio — <strong>you understand WHY it's better and can make decisions independently.</strong> That's the difference between a tool and an education.</p>
+</div>
+
+<!-- ============================================ -->
+<h2>Part 6: The Complete Money OS v2 Stack</h2>
+<!-- ============================================ -->
+
+<div class="section">
+<h3>All 5 Layers, Reimagined</h3>
+
+<table class="comp-table">
+<thead>
+  <tr>
+    <th>Layer</th>
+    <th>Old World</th>
+    <th>Money OS v2</th>
+    <th>Core Innovation</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><strong style="color:var(--green)">L1: Cash Flow</strong></td>
+    <td>"You spent $340 on dining"</td>
+    <td>"Redirecting $150 from unused subscriptions to Roth adds $72K to your freedom"</td>
+    <td>Every dollar rated by Freedom Impact Score</td>
+  </tr>
+  <tr>
+    <td><strong style="color:var(--cyan)">L2: Narrative</strong></td>
+    <td>Pie chart + balance</td>
+    <td>Weekly story of your financial life, tied to goals and freedom progress</td>
+    <td>Numbers → Narrative → Meaning</td>
+  </tr>
+  <tr>
+    <td><strong style="color:var(--accent2)">L3: Intelligence</strong></td>
+    <td>Basic allocation view</td>
+    <td>Concentration scoring, macro radar, crisis playbooks, rebalancing engine</td>
+    <td>Proactive defense + opportunity capture</td>
+  </tr>
+  <tr>
+    <td><strong style="color:var(--pink)">L4: Tax Engine</strong></td>
+    <td>Annual filing</td>
+    <td>Year-round bracket optimization, equity comp strategy, Roth conversions, loss harvesting</td>
+    <td>$2-15K/year in found money</td>
+  </tr>
+  <tr>
+    <td><strong style="color:var(--gold)">L5: Wealth Creation</strong></td>
+    <td>Doesn't exist</td>
+    <td>Freedom Number tracking, compound machine design, generational wealth planning, thesis-to-trades</td>
+    <td>Transform anxiety into agency</td>
+  </tr>
+</tbody>
+</table>
+</div>
+
+<!-- ============================================ -->
+<h2>Part 7: New Skills to Build</h2>
+<!-- ============================================ -->
+
+<div class="section">
+<p>Money OS v1 has 7 skills (Layers 3-5). Here are the new skills needed for the full v2 vision:</p>
+</div>
+
+<div class="grid2">
+  <div class="vcard">
+    <div class="vcard-title" style="color:var(--green);">NEW: Cash Flow Intelligence</div>
+    <p>Layer 1 reimagined. Analyzes income and expenses, rates each by "Freedom Impact Score," identifies wealth leaks (zombie subscriptions, suboptimal interest rates, insurance overpayment), routes surplus cash to highest-impact destinations.</p>
+    <p class="highlight">Command: /cash-flow</p>
+  </div>
+  <div class="vcard">
+    <div class="vcard-title" style="color:var(--cyan);">NEW: Financial Narrative</div>
+    <p>Layer 2 reimagined. Generates weekly/monthly financial life story connecting numbers to goals, freedom progress, and life events. Not a dashboard — a narrative that makes you FEEL your progress.</p>
+    <p class="highlight">Command: /weekly-pulse</p>
+  </div>
+  <div class="vcard">
+    <div class="vcard-title" style="color:var(--gold);">NEW: Freedom Number Engine</div>
+    <p>Layer 5. Calculates your personal Freedom Number (passive income ≥ expenses), tracks progress daily, models scenarios (raise, side income, Roth conversions, market returns), runs Monte Carlo simulation on YOUR specific path.</p>
+    <p class="highlight">Command: /freedom</p>
+  </div>
+  <div class="vcard">
+    <div class="vcard-title" style="color:var(--pink);">NEW: Wealth Leak Scanner</div>
+    <p>Layer 1+. Goes beyond budgeting to find hidden money drains: wrong tax lots, suboptimal savings rates, insurance gaps/overpayment, fee drag, cash earning 0%, RSU cost basis errors, unclaimed credits.</p>
+    <p class="highlight">Command: /leak-scan</p>
+  </div>
+  <div class="vcard">
+    <div class="vcard-title" style="color:var(--accent2);">NEW: Generational Wealth Planner</div>
+    <p>Layer 5. Designs multi-generational wealth transfer: custodial Roth IRAs for kids, 529 optimization, trust vs. direct inheritance modeling, UGMA/UTMA strategy, estate tax planning basics.</p>
+    <p class="highlight">Command: /generational</p>
+  </div>
+  <div class="vcard">
+    <div class="vcard-title" style="color:var(--orange);">NEW: Life Event Router</div>
+    <p>Ambient coach. Detects life events (raise, job change, marriage, baby, home purchase, inheritance) and generates comprehensive financial action plans. "You're getting married — here's the 12-item financial checklist."</p>
+    <p class="highlight">Command: /life-event [event]</p>
+  </div>
+  <div class="vcard">
+    <div class="vcard-title" style="color:var(--green2);">NEW: Decision Modeler</div>
+    <p>Strategic confidence. For any major financial decision, models 3-5 scenarios with probability-weighted outcomes over 1, 5, 10, 20 years. Uses YOUR tax bracket, YOUR portfolio, YOUR goals. Not generic — personal.</p>
+    <p class="highlight">Command: /decide [scenario]</p>
+  </div>
+  <div class="vcard">
+    <div class="vcard-title" style="color:var(--cyan);">NEW: Financial Educator</div>
+    <p>Adaptive curriculum. Tracks what you've learned through doing. Identifies knowledge gaps based on your mistakes and missed opportunities. Delivers micro-lessons at the moment of relevance. Builds toward financial independence literacy.</p>
+    <p class="highlight">Command: /learn [topic]</p>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<h2>Part 8: The Complete Money OS v2 Skill Map</h2>
+<!-- ============================================ -->
+
+<div class="section">
+<pre>
+MONEY OS v2 — 15 Skills Across 5 Layers
+══════════════════════════════════════════════════════════════
+
+LAYER 5: WEALTH CREATION (What nobody else does)
+├── freedom-number ......... Track path to financial independence
+├── generational-wealth .... Multi-generational wealth design
+├── thesis-to-trades ....... Convert ideas → portfolio action [v1]
+└── decision-modeler ....... Scenario model any financial choice
+
+LAYER 4: TAX INTELLIGENCE (Year-round, proactive)
+├── tax-strategy ........... Bracket optimization, Roth, equity comp [v1]
+├── tax-harvest ............ Cross-account loss harvesting [v1]
+└── tax-return-analyzer .... Missed deductions + credits scanner [v1]
+
+LAYER 3: PORTFOLIO INTELLIGENCE (Defense + opportunity)
+├── portfolio-health-check . 5-dimension diagnostic [v1]
+├── rebalancing-plan ....... Tax-aware sequenced trades [v1]
+└── macro-radar ............ VIX/yields/DXY + crisis playbooks [v1]
+
+LAYER 2: FINANCIAL NARRATIVE (Not tracking — storytelling)
+├── weekly-pulse ........... Financial life narrative + freedom progress
+└── life-event-router ...... Life event → comprehensive action plan
+
+LAYER 1: CASH FLOW INTELLIGENCE (Not budgeting — optimization)
+├── cash-flow-intel ........ Freedom Impact scoring + surplus routing
+└── wealth-leak-scanner .... Hidden money drain detection
+
+CROSS-CUTTING
+└── financial-educator ..... Contextual micro-lessons + knowledge tracking
+
+[v1] = Already built in Money OS v1
+</pre>
+</div>
+
+<!-- ============================================ -->
+<h2>Part 9: Why This Wins — The Moat</h2>
+<!-- ============================================ -->
+
+<div class="section">
+<h3>Why can't Mint/YNAB/Monarch just add these features?</h3>
+
+<div class="grid2" style="margin-top:1rem;">
+  <div class="vcard">
+    <div class="vcard-title" style="color:var(--red);">They Can't Because: Architecture</div>
+    <p>Traditional apps are CRUD databases with a UI. They store transactions and display charts. Money OS is a <strong>knowledge engine</strong> — tax code rules, bracket optimization logic, crisis playbooks, equity comp models, Monte Carlo simulations. You can't bolt this onto a transaction database.</p>
+  </div>
+  <div class="vcard">
+    <div class="vcard-title" style="color:var(--red);">They Can't Because: AI-Native</div>
+    <p>Money OS is designed to live INSIDE an LLM. It's not an app with an AI chatbot bolted on (like Cleo). It's financial intelligence that flows through natural conversation. Traditional apps would have to rebuild from scratch.</p>
+  </div>
+  <div class="vcard">
+    <div class="vcard-title" style="color:var(--red);">They Can't Because: Business Model Conflict</div>
+    <p>TurboTax makes $4.9B from annual filing. Why would they cannibalize that with year-round free advice? Empower makes 0.89% AUM on assets they manage. Why would they help you DIY? <strong>Their incentives are misaligned with your wealth.</strong></p>
+  </div>
+  <div class="vcard">
+    <div class="vcard-title" style="color:var(--red);">They Can't Because: Platform Lock</div>
+    <p>Money OS runs on Claude, ChatGPT, or any LLM. It goes where the user already is. Traditional apps need you to download their app, create an account, link your banks. Money OS meets you in the conversation you're already having.</p>
+  </div>
+</div>
+</div>
+
+<!-- ============================================ -->
+<div class="manifesto">
+<h2>The Money OS Manifesto</h2>
+
+<p style="font-size:1.1rem; margin-bottom:1.2rem;"><strong>Money OS exists because:</strong></p>
+
+<p style="font-size:1rem;">87% of Americans are financially anxious — not because they lack information, but because they lack a <strong>financial consciousness</strong> that sees what they see, knows what they know, and constantly whispers: "Here's the move."</p>
+
+<p style="font-size:1rem;">Every existing app says: <em>"Here's what happened."</em><br>
+Money OS says: <strong><em>"Here's what to do next, here's why, and here's how it connects to the life you're building."</em></strong></p>
+
+<p style="font-size:1rem;">We don't compete with YNAB on budgeting. We don't compete with Empower on dashboards. We don't compete with TurboTax on filing. We don't compete with Wealthfront on autopilot.</p>
+
+<p style="font-size:1rem;"><strong>We compete with the $500/hour financial advisor that 99% of people can't afford — and we win.</strong></p>
+
+<p style="font-size:1rem; margin-bottom:0;">Not by being cheaper. By being <strong>always present, deeply personal, relentlessly proactive, and obsessed with one metric: your progress toward freedom.</strong></p>
+</div>
+
+<div class="section" style="margin-top:2rem;">
+<h3>Sources & References</h3>
+<p class="dim" style="font-size:0.78rem;">
+<a href="https://www.psychologytoday.com/us/blog/the-regret-free-life/202502/why-money-is-a-great-tool-but-an-awful-goal" style="color:var(--dim)">Psychology Today — Money as Tool vs Goal</a> •
+<a href="https://ozchen.com/maslow-hierarchy-needs-money/" style="color:var(--dim)">Maslow's Hierarchy of Financial Needs</a> •
+<a href="https://www.empower.com/the-currency/work/sparks-fly-the-fire-movement-trend-is-fueling-early-retirement-news" style="color:var(--dim)">Empower — FIRE Movement Statistics</a> •
+<a href="https://www.whistl.app/blog-ai-financial-coach-complete-guide-2026.html" style="color:var(--dim)">Whistl — AI Financial Coach Guide 2026</a> •
+<a href="https://artafinance.com/global/insights/meet-arta-ai-private-wealth-guided-by-ai-agents" style="color:var(--dim)">Arta Finance — AI Wealth Management</a> •
+<a href="https://intellias.com/ai-financial-assistant-app-development/" style="color:var(--dim)">Intellias — AI Financial Assistant Development 2026</a> •
+<a href="https://www.sciencenewstoday.org/the-psychology-of-money-how-our-minds-influence-spending-and-saving" style="color:var(--dim)">Science News Today — Psychology of Money</a> •
+Northwestern Mutual 2025 Study • Yale Budget Lab • CNBC Tariff Analysis • Resume Now AI Survey
+</p>
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,147 @@
+{
+  "userProfile": {
+    "name": "Alex",
+    "goals": [
+      "Understand overall financial posture",
+      "Reduce concentration risk",
+      "Keep at least 6 months of liquidity"
+    ],
+    "riskTolerance": "Moderate",
+    "timeHorizon": "3 to 5 years",
+    "liquidityNeed": "High"
+  },
+  "accounts": [
+    {
+      "provider": "Fidelity",
+      "type": "Brokerage",
+      "status": "current",
+      "balance": 248500,
+      "note": "Primary long-term holdings"
+    },
+    {
+      "provider": "Moomoo",
+      "type": "Trading",
+      "status": "delayed",
+      "balance": 28400,
+      "note": "Shorter-term ideas and watch positions"
+    },
+    {
+      "provider": "Coinbase",
+      "type": "Crypto",
+      "status": "current",
+      "balance": 41750,
+      "note": "BTC and ETH concentration"
+    },
+    {
+      "provider": "Kraken",
+      "type": "Crypto",
+      "status": "stale",
+      "balance": 12600,
+      "note": "Last sync 18 hours ago"
+    },
+    {
+      "provider": "PayPal",
+      "type": "Cash",
+      "status": "current",
+      "balance": 3900,
+      "note": "Spending and transfer activity"
+    }
+  ],
+  "briefing": {
+    "headline": "Your portfolio is stable overall, but crypto concentration and a stale Kraken feed deserve attention before acting on new ideas.",
+    "netWorth": "$335.2K",
+    "liquidity": "4.8 months",
+    "riskPosture": "Moderate to elevated",
+    "cashFlow": "+$3.1K / month",
+    "whatChanged": [
+      "Energy-sensitive equities contributed most of this week's upside.",
+      "Kraken data is stale, so crypto exposure may be understated.",
+      "Cash reserves fell below the 6-month target after recent transfers."
+    ],
+    "suggestedActions": [],
+    "topItems": [
+      "Kraken connector freshness",
+      "Crypto concentration relative to target",
+      "Cash buffer versus 6-month goal"
+    ],
+    "context": {
+      "includedAccounts": [
+        "Fidelity",
+        "Moomoo",
+        "Coinbase",
+        "Kraken",
+        "PayPal"
+      ],
+      "missingData": [
+        "Checking account not connected",
+        "Kraken prices older than target freshness window"
+      ],
+      "freshness": "Degraded",
+      "confidence": "Medium"
+    }
+  },
+  "portfolioMetrics": {
+    "liquidityMonths": 4.8,
+    "targetLiquidityMonths": 6,
+    "monthlyCashFlow": 3100,
+    "targetCryptoAllocation": 0.12
+  },
+  "services": {
+    "geopolitics": {
+      "topic": "Iran-US war escalation",
+      "updatedAt": "2026-03-11T08:00:00Z",
+      "signals": [
+        {
+          "id": "shipping-risk",
+          "headline": "Shipping and Strait disruption risk remains elevated",
+          "summary": "Further disruption could push oil and freight costs higher and increase market volatility.",
+          "marketImpact": "Supports energy prices, pressures transport and consumer margins."
+        },
+        {
+          "id": "oil-volatility",
+          "headline": "Oil sensitivity is the fastest transmission channel",
+          "summary": "Energy shocks can move inflation expectations, rates assumptions, and sector leadership quickly.",
+          "marketImpact": "Benefits energy exposure; hurts rate-sensitive and consumer sectors."
+        },
+        {
+          "id": "risk-off",
+          "headline": "Risk-off rotation probability has increased",
+          "summary": "Escalation can strengthen demand for cash, defensives, and high-quality balance sheets.",
+          "marketImpact": "Raises downside pressure on speculative assets and high-beta crypto positions."
+        }
+      ]
+    },
+    "marketRegime": {
+      "label": "Cautious risk regime",
+      "summary": "Markets are trading with elevated geopolitical headline sensitivity and uneven risk appetite.",
+      "drivers": [
+        "Energy and inflation sensitivity",
+        "Headline-driven volatility spikes",
+        "Preference for liquidity and defensives"
+      ]
+    },
+    "macroExposure": {
+      "topExposures": [
+        {
+          "id": "crypto-beta",
+          "label": "Crypto beta",
+          "sensitivity": "high",
+          "why": "Coinbase and Kraken balances create above-target exposure to risk-off moves."
+        },
+        {
+          "id": "liquidity-buffer",
+          "label": "Liquidity buffer",
+          "sensitivity": "medium",
+          "why": "Cash reserves are below the target implied by the user's profile."
+        },
+        {
+          "id": "energy-benefit",
+          "label": "Energy upside participation",
+          "sensitivity": "medium",
+          "why": "Fidelity holdings capture some upside from higher energy prices."
+        }
+      ],
+      "portfolioView": "Portfolio can benefit modestly from energy strength, but the more immediate vulnerability is risk-off pressure on crypto and a thinner-than-target cash buffer."
+    }
+  }
+}

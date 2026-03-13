@@ -1,0 +1,16 @@
+{
+  "name": "money-os",
+  "version": "3.0.0",
+  "description": "Your AI financial consciousness — a 24/7 wealth-building co-pilot embedded in your AI assistant. 16 skills across 5 layers: cash flow intelligence with Freedom Impact scoring, weekly financial pulse narratives, Freedom Number calculation with Monte Carlo simulation, wealth leak scanning ($2K-8K/year in fixable leaks), portfolio health checks, tax-aware rebalancing, tax-loss harvesting, macro radar, year-round tax strategy, tax return analysis, thesis-to-trade conversion, decision modeling with probability-weighted scenarios, life event financial playbooks, generational wealth planning, adaptive financial education, and a courage engine for when money feels overwhelming. Not a budgeting app — a wealth creation system.",
+  "author": {
+    "name": "Wu"
+  },
+  "keywords": [
+    "personal-finance", "portfolio", "investing", "tax-strategy", "tax-optimization",
+    "rebalancing", "tax-loss-harvesting", "macro", "roth-conversion", "rsu",
+    "capital-gains", "cash-flow", "budgeting", "freedom-number", "fire",
+    "financial-independence", "wealth-building", "debt-payoff", "emergency-fund",
+    "529-plan", "generational-wealth", "financial-education", "financial-anxiety",
+    "life-events", "decision-modeling", "wealth-leaks", "compound-interest"
+  ]
+}

@@ -13,3 +13,15 @@ coverage/
 *.log
 tmp/
 *.tsbuildinfo
+
+# Personal financial data - never commit
+Portfolio_Rebalancing_Plan.xlsx
+*.~lock.*
+profile/
+
+# Build artifacts
+*.plugin
+zi8yzqxH
+
+# Playwright
+.playwright-cli/
