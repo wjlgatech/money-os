@@ -25,3 +25,14 @@ zi8yzqxH
 
 # Playwright
 .playwright-cli/
+
+# Preview files (generated copies — originals live in apps/ and skills/)
+freedom-calculator.html
+freedom-card-preview.html
+leak-card-preview.html
+courage-card-preview.html
+landing-page.html
+campaign-dashboard.html
+
+# Office lock files
+.~lock.*

@@ -51,16 +51,16 @@ Money OS covers 5 layers of personal finance, from daily cash flow to generation
 
 ## How It Works
 
-Money OS is a collection of 16 specialized skills with deep reference documents covering financial formulas, decision frameworks, tax rules, and transformation stories. Each skill is a carefully crafted prompt that guides the AI through expert-level financial analysis.
+Money OS is a collection of 17 specialized skills with deep reference documents covering financial formulas, decision frameworks, tax rules, and transformation stories. Each skill is a carefully crafted prompt that guides the AI through expert-level financial analysis.
 
-Your data never leaves your computer. All analysis runs locally in your AI assistant's context. No accounts to create, no data to upload, no subscriptions required.
+Your data never leaves your computer. All analysis runs locally in your AI assistant's context. No accounts to create, no data to upload, no subscriptions required. [See our security architecture →](docs/security-and-trust.md)
 
 ## Repository Structure
 
 ```
 .claude-plugin/        Plugin manifest
   plugin.json
-skills/                16 financial intelligence skills
+skills/                17 financial intelligence skills
   cash-flow-intel/     Cash flow analysis + surplus routing
   weekly-pulse/        Financial narrative generator
   freedom-number/      Freedom Number calculator + Monte Carlo
@@ -77,15 +77,30 @@ skills/                16 financial intelligence skills
   life-event-router/   Life event financial playbooks
   generational-wealth/ Multi-generational wealth planning
   thesis-to-trades/    Investment thesis gap analysis
-commands/              15 slash commands (entry points for skills)
-docs/                  Architecture, PRDs, and design specs
-apps/                  Standalone app (future — see roadmap)
+  profile-manager/     Persistent financial profile (internal)
+  session-review/      Self-evolution engine (internal)
+  share-cards/         Shareable HTML artifacts (internal)
+commands/              18 slash commands (entry points for skills)
+  money-os.md          Unified entry point — intent routing
+  setup.md             Guided onboarding
+  review.md            Session review + profile updates
+docs/                  Architecture, security, PRDs
+  security-and-trust.md  Zero-trust security architecture
+apps/                  Standalone tools
+  freedom-calculator/  Web calculator — top-of-funnel
+marketing/             Campaign assets, content kit, launch plan
 ```
+
+## Try It Now
+
+**60-second Freedom Number calculator** — no signup, no data collection:
+
+→ [apps/freedom-calculator/index.html](apps/freedom-calculator/index.html)
 
 ## Roadmap
 
-- **v3.0** (current) — 16 skills, 15 commands. Full coverage across 5 financial layers.
-- **v3.1** — Profile persistence (file-based financial identity that remembers you between sessions), shareable financial artifacts, unified `/money-os` entry point.
+- **v3.0** — 16 skills, 15 commands. Full coverage across 5 financial layers.
+- **v3.1** (current) — Profile persistence, shareable artifacts, unified `/money-os` entry, security architecture, Freedom Calculator web app.
 - **v3.2** — Self-evolution loop (auto-updates your profile as you interact), longitudinal tracking.
 - **v3.3** — Social Security optimization, RMD management, age-threshold automation.
 - **v4.0** — Standalone data layer with cross-platform profile sync.
