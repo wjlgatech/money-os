@@ -27,6 +27,7 @@ zi8yzqxH
 apps/screener-api/data/paper-portfolio.json
 apps/screener-api/data/trade-gate.json
 apps/screener-api/data/agent-state.json
+apps/screener-api/data/connectors-state.json
 apps/screener-api/logs/
 !apps/screener-api/.env.local.example
 
