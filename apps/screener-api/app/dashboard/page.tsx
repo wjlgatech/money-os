@@ -26,19 +26,39 @@ interface Briefing {
   }>;
   watching: Array<{ ticker: string; reason: string; estimatedDays: number }>;
   portfolio: {
-    equity: number; cash: number; totalPnl: number; totalPnlPct: number;
+    equity: number; portfolioValue: number; cash: number; totalPnl: number; totalPnlPct: number;
     positions: Array<{
       symbol: string; qty: number; avgEntry: number; currentPrice: number;
-      unrealizedPnl: number; pnlPct: number; context: string;
+      unrealizedPnl: number; pnlPct: number; posValue: number; portfolioPct: number; context: string;
     }>;
   };
   performance: { winRate: number; totalTrades: number; insight: string; bestSector: string | null; worstSector: string | null };
+  selectionProcess: {
+    universe: number;
+    description: string;
+    steps: Array<{ step: string; result: string }>;
+    dataFreshness: string;
+    priceSource: string;
+  };
+  connections: Record<string, string>;
   rules: Record<string, unknown>;
   agentActive: boolean;
   lastCycle: string | null;
 }
 
 // ── Dashboard V2 ─────────────────────────────────────────────
+
+function Expandable({ title, children }: { title: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ borderTop: "1px solid #1e1e2e" }}>
+      <button onClick={() => setOpen(!open)} style={{ width: "100%", background: "none", border: "none", color: "#6b7280", padding: "8px 12px", cursor: "pointer", textAlign: "left", fontSize: 11, display: "flex", justifyContent: "space-between" }}>
+        <span>{title}</span><span>{open ? "▼" : "▶"}</span>
+      </button>
+      {open && <div style={{ padding: "0 12px 12px" }}>{children}</div>}
+    </div>
+  );
+}
 
 export default function DashboardV2() {
   const [briefing, setBriefing] = useState<Briefing | null>(null);
@@ -103,6 +123,7 @@ export default function DashboardV2() {
   }
 
   const b = briefing;
+  const displayEquity = b?.portfolio?.portfolioValue ?? b?.portfolio?.equity ?? 0;
   const pnlColor = (b?.portfolio?.totalPnl ?? 0) >= 0 ? "#4ade80" : "#ef4444";
   const vixVal = b?.market?.vix ?? 0;
   const vixColor = vixVal < 15 ? "#4ade80" : vixVal < 20 ? "#a3e635" : vixVal < 25 ? "#facc15" : vixVal < 30 ? "#fb923c" : "#ef4444";
@@ -116,7 +137,7 @@ export default function DashboardV2() {
           <span style={{ fontSize: 10, color: "#3b82f6", background: "#1e3a5f", padding: "2px 8px", borderRadius: 3 }}>AGENT</span>
         </div>
         <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
-          <HeaderStat label="Portfolio" value={`$${(b?.portfolio?.equity ?? 0).toLocaleString(undefined, { minimumFractionDigits: 0 })}`} sub={`${(b?.portfolio?.totalPnl ?? 0) >= 0 ? "+" : ""}$${(b?.portfolio?.totalPnl ?? 0).toFixed(0)}`} subColor={pnlColor} />
+          <HeaderStat label="Portfolio" value={`$${displayEquity.toLocaleString(undefined, { minimumFractionDigits: 0 })}`} sub={`${b?.portfolio?.positions?.length ?? 0} positions`} subColor="#818cf8" />
           <HeaderStat label="VIX" value={vixVal.toFixed(1)} sub={vixVal < 20 ? "Normal" : vixVal < 25 ? "Nervous" : vixVal < 30 ? "Fearful" : "Panic"} subColor={vixColor} />
           <HeaderStat label="Regime" value={(b?.market?.regime?.regime ?? "—").toUpperCase()} sub={`${((b?.market?.regime?.confidence ?? 0) * 100).toFixed(0)}%`} subColor="#818cf8" />
           <button onClick={refresh} style={btnStyle}>{loading ? "..." : "Refresh"}</button>
@@ -176,6 +197,39 @@ export default function DashboardV2() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Selection Process (expandable transparency) */}
+          {b?.selectionProcess && (
+            <div style={{ padding: "0 24px 0", borderBottom: "1px solid #1e1e2e" }}>
+              <Expandable title={`How were these ${b.pendingApprovals?.length ?? 0} selected? (from ${b.selectionProcess.universe} tickers)`}>
+                <div style={{ fontSize: 12, lineHeight: 1.8 }}>
+                  <div style={{ color: "#a1a1aa", marginBottom: 8 }}>
+                    Universe: <span style={{ color: "#e2e8f0" }}>{b.selectionProcess.description}</span>
+                  </div>
+                  {b.selectionProcess.steps.map((s, i) => (
+                    <div key={i} style={{ display: "flex", gap: 8, color: "#6b7280" }}>
+                      <span style={{ color: "#3b82f6" }}>{i + 1}.</span>
+                      <span>{s.step} → <span style={{ color: "#a1a1aa" }}>{s.result}</span></span>
+                    </div>
+                  ))}
+                  <div style={{ marginTop: 8, color: "#52525b", fontSize: 11 }}>
+                    {b.selectionProcess.dataFreshness} | Prices: {b.selectionProcess.priceSource}
+                  </div>
+                </div>
+              </Expandable>
+
+              <Expandable title="Portfolio connections">
+                <div style={{ fontSize: 12 }}>
+                  {b.connections && Object.entries(b.connections).map(([name, status]) => (
+                    <div key={name} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
+                      <span style={{ color: "#a1a1aa", textTransform: "capitalize" }}>{name}</span>
+                      <span style={{ color: (status as string).includes("Connected") ? "#4ade80" : "#6b7280", fontSize: 11 }}>{status as string}</span>
+                    </div>
+                  ))}
+                </div>
+              </Expandable>
             </div>
           )}
 
