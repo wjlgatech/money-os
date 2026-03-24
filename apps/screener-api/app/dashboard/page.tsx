@@ -2,251 +2,348 @@
 
 import { useEffect, useState, useCallback } from "react";
 
-// ── Types ────────────────────────────────────────────────────
-
-interface ScanResult {
-  ticker: string;
-  asset: string;
-  price: string;
-  signalType: string;
-  level: string;
-  distanceAtr: string;
-  zone: string;
-  timeframe: string;
-  direction: string;
-  sector: string | null;
-}
-
-interface Signal {
-  ticker: string;
-  timeframe: string;
-  signalType: string;
-  direction: string;
-  detail: string;
-  signalDate: string;
-}
-
-interface Position {
-  symbol: string;
-  qty: number;
-  avgEntry: number;
-  currentPrice: number;
-  unrealizedPnl: number;
-}
-
-// ── Dashboard ────────────────────────────────────────────────
-
 const API_TOKEN = process.env.NEXT_PUBLIC_API_TOKEN ?? "";
 const authHeaders: HeadersInit = API_TOKEN ? { Authorization: `Bearer ${API_TOKEN}` } : {};
 
 function apiFetch(path: string) {
   return fetch(path, { headers: authHeaders }).then((r) => r.json());
 }
+function apiPost(path: string, body: unknown) {
+  return fetch(path, { method: "POST", headers: { ...authHeaders, "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json());
+}
 
-export default function Dashboard() {
-  const [scanner, setScanner] = useState<ScanResult[]>([]);
-  const [signals, setSignals] = useState<Signal[]>([]);
-  const [vix, setVix] = useState<{ date: string; close: string } | null>(null);
-  const [portfolio, setPortfolio] = useState<{
-    backend: string; equity: number; cash: number; positions: Position[];
-  } | null>(null);
-  const [pipeline, setPipeline] = useState<Array<{ jobName: string; status: string; completed: number; total: number }>>([]);
-  const [universe, setUniverse] = useState<{ total: number }>({ total: 0 });
+// ── Types ────────────────────────────────────────────────────
+
+interface Briefing {
+  headline: string;
+  market: { regime: { regime: string; confidence: number }; vix: number; headline: string };
+  actions: string[];
+  pendingApprovals: Array<{
+    id: string; ticker: string; shares: number; price: number;
+    stopLoss: number; takeProfit: number; confidence: string;
+    signals: string[]; reason: string; riskAmount: number; riskPct: number;
+    aiContext: string;
+  }>;
+  watching: Array<{ ticker: string; reason: string; estimatedDays: number }>;
+  portfolio: {
+    equity: number; cash: number; totalPnl: number; totalPnlPct: number;
+    positions: Array<{
+      symbol: string; qty: number; avgEntry: number; currentPrice: number;
+      unrealizedPnl: number; pnlPct: number; context: string;
+    }>;
+  };
+  performance: { winRate: number; totalTrades: number; insight: string; bestSector: string | null; worstSector: string | null };
+  rules: Record<string, unknown>;
+  agentActive: boolean;
+  lastCycle: string | null;
+}
+
+// ── Dashboard V2 ─────────────────────────────────────────────
+
+export default function DashboardV2() {
+  const [briefing, setBriefing] = useState<Briefing | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [scanFilter, setScanFilter] = useState<"entry,alert" | "entry" | "alert">("entry,alert");
-  const [lastRefresh, setLastRefresh] = useState<string>("");
+  const [approving, setApproving] = useState<string | null>(null);
+  const [chatInput, setChatInput] = useState("");
+  const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "agent"; text: string }>>([]);
 
-  const fetchAll = useCallback(async () => {
+  const refresh = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
-      const [scanRes, sigRes, vixRes, portRes, pipeRes, uniRes] = await Promise.allSettled([
-        apiFetch(`/api/scanner?filter=${scanFilter}`),
-        apiFetch("/api/signals?days=7"),
-        apiFetch("/api/vix"),
-        apiFetch("/api/broker"),
-        apiFetch("/api/pipeline/status"),
-        apiFetch("/api/universe"),
-      ]);
+      const data = await apiFetch("/api/briefing");
+      if (!data.error) setBriefing(data);
+    } catch {}
+    setLoading(false);
+  }, []);
 
-      if (scanRes.status === "fulfilled") setScanner(scanRes.value.results ?? []);
-      if (sigRes.status === "fulfilled") setSignals(sigRes.value.signals ?? []);
-      if (vixRes.status === "fulfilled") setVix(vixRes.value);
-      if (portRes.status === "fulfilled") setPortfolio(portRes.value);
-      if (pipeRes.status === "fulfilled") setPipeline(pipeRes.value.jobs ?? []);
-      if (uniRes.status === "fulfilled") setUniverse(uniRes.value);
+  useEffect(() => { refresh(); }, [refresh]);
 
-      setLastRefresh(new Date().toLocaleTimeString());
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setLoading(false);
+  const handleApprove = async (proposal: Briefing["pendingApprovals"][0]) => {
+    setApproving(proposal.id);
+    await apiPost("/api/agent", { action: "approve", proposal });
+    await refresh();
+    setApproving(null);
+  };
+
+  const handleSkip = async (id: string) => {
+    // Just remove from UI — agent will expire it
+    if (briefing) {
+      setBriefing({ ...briefing, pendingApprovals: briefing.pendingApprovals.filter((p) => p.id !== id) });
     }
-  }, [scanFilter]);
+  };
 
-  useEffect(() => { fetchAll(); }, [fetchAll]);
+  const handleChat = () => {
+    if (!chatInput.trim()) return;
+    const msg = chatInput.trim();
+    setChatMessages((prev) => [...prev, { role: "user", text: msg }]);
+    setChatInput("");
 
-  const vixLevel = vix ? Number(vix.close) : 0;
-  const vixColor = vixLevel < 15 ? "#4ade80" : vixLevel < 20 ? "#a3e635" : vixLevel < 25 ? "#facc15" : vixLevel < 30 ? "#fb923c" : "#ef4444";
-  const vixLabel = vixLevel < 15 ? "Calm" : vixLevel < 20 ? "Normal" : vixLevel < 25 ? "Nervous" : vixLevel < 30 ? "Fearful" : "Panic";
+    // Simulate agent response based on keywords
+    setTimeout(() => {
+      let response: string;
+      if (msg.toLowerCase().includes("why") && briefing?.pendingApprovals[0]) {
+        const p = briefing.pendingApprovals[0];
+        response = `${p.ticker} is at ${p.reason}. ${p.aiContext} The thesis: support levels that have held multiple times tend to hold again. But it's not guaranteed — that's why we have a stop-loss at $${p.stopLoss}.`;
+      } else if (msg.toLowerCase().includes("risk")) {
+        response = `Your total portfolio risk is ${briefing?.portfolio?.totalPnlPct?.toFixed(2) ?? 0}%. Max position size is 3% ($${((briefing?.portfolio?.equity ?? 100000) * 0.03).toFixed(0)}). Every trade has a stop-loss — worst case per trade is ~$150-200.`;
+      } else if (msg.toLowerCase().includes("regime") || msg.toLowerCase().includes("market")) {
+        response = briefing?.market?.headline ?? "Run the pipeline first to get market data.";
+      } else if (msg.toLowerCase().includes("performance") || msg.toLowerCase().includes("how am i")) {
+        const perf = briefing?.performance;
+        response = perf ? `${perf.totalTrades} trades total, ${perf.winRate.toFixed(1)}% win rate. ${perf.insight}` : "No trades yet.";
+      } else {
+        response = `I understand you're asking about "${msg}". For deep analysis, use the Claude plugin directly — say this exact question to Claude with /money-os. The dashboard handles approvals and monitoring; Claude handles strategy and coaching.`;
+      }
+      setChatMessages((prev) => [...prev, { role: "agent", text: response }]);
+    }, 500);
+  };
+
+  if (loading && !briefing) {
+    return <div style={pageStyle}><div style={{ padding: 40, textAlign: "center", color: "#6b7280" }}>Loading agent briefing...</div></div>;
+  }
+
+  const b = briefing;
+  const pnlColor = (b?.portfolio?.totalPnl ?? 0) >= 0 ? "#4ade80" : "#ef4444";
+  const vixVal = b?.market?.vix ?? 0;
+  const vixColor = vixVal < 15 ? "#4ade80" : vixVal < 20 ? "#a3e635" : vixVal < 25 ? "#facc15" : vixVal < 30 ? "#fb923c" : "#ef4444";
 
   return (
-    <div style={{ background: "#0a0a0f", color: "#e4e4e7", minHeight: "100vh", fontFamily: "'SF Mono', 'Fira Code', monospace", fontSize: 13 }}>
-      {/* Header */}
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 20px", borderBottom: "1px solid #1e1e2e", background: "#0f0f18" }}>
+    <div style={pageStyle}>
+      {/* ── Header ──────────────────────────────────────── */}
+      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 24px", borderBottom: "1px solid #1e1e2e", background: "#0c0c14" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 18, fontWeight: 700 }}>Money OS</span>
-          <span style={{ color: "#6b7280", fontSize: 11 }}>v4.0</span>
+          <span style={{ fontSize: 18, fontWeight: 700, color: "#e2e8f0" }}>Money OS</span>
+          <span style={{ fontSize: 10, color: "#3b82f6", background: "#1e3a5f", padding: "2px 8px", borderRadius: 3 }}>AGENT</span>
         </div>
-        <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-          <Stat label="VIX" value={vix ? Number(vix.close).toFixed(1) : "—"} color={vixColor} sub={vixLabel} />
-          <Stat label="Universe" value={String(universe.total)} color="#818cf8" />
-          <Stat label="Backend" value={portfolio?.backend?.toUpperCase() ?? "—"} color={portfolio?.backend === "alpaca" ? "#4ade80" : "#facc15"} />
-          <button onClick={fetchAll} style={{ background: "#1e1e2e", border: "1px solid #2e2e3e", color: "#a1a1aa", padding: "4px 12px", borderRadius: 4, cursor: "pointer", fontSize: 11 }}>
-            {loading ? "..." : "Refresh"}
-          </button>
-          <span style={{ color: "#52525b", fontSize: 10 }}>{lastRefresh}</span>
+        <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
+          <HeaderStat label="Portfolio" value={`$${(b?.portfolio?.equity ?? 0).toLocaleString(undefined, { minimumFractionDigits: 0 })}`} sub={`${(b?.portfolio?.totalPnl ?? 0) >= 0 ? "+" : ""}$${(b?.portfolio?.totalPnl ?? 0).toFixed(0)}`} subColor={pnlColor} />
+          <HeaderStat label="VIX" value={vixVal.toFixed(1)} sub={vixVal < 20 ? "Normal" : vixVal < 25 ? "Nervous" : vixVal < 30 ? "Fearful" : "Panic"} subColor={vixColor} />
+          <HeaderStat label="Regime" value={(b?.market?.regime?.regime ?? "—").toUpperCase()} sub={`${((b?.market?.regime?.confidence ?? 0) * 100).toFixed(0)}%`} subColor="#818cf8" />
+          <button onClick={refresh} style={btnStyle}>{loading ? "..." : "Refresh"}</button>
         </div>
       </header>
 
-      {error && <div style={{ background: "#7f1d1d", color: "#fca5a5", padding: "8px 20px", fontSize: 12 }}>{error}</div>}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", minHeight: "calc(100vh - 52px)" }}>
+        {/* ── Main Column ─────────────────────────────── */}
+        <div style={{ borderRight: "1px solid #1e1e2e", overflowY: "auto" }}>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: "#1e1e2e" }}>
-        {/* Portfolio */}
-        <Panel title={`Portfolio — $${portfolio?.equity?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? "—"}`} subtitle={`Cash: $${portfolio?.cash?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? "—"}`}>
-          {portfolio?.positions && portfolio.positions.length > 0 ? (
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ color: "#6b7280", fontSize: 10, textAlign: "left" }}>
-                  <th style={th}>Ticker</th><th style={th}>Qty</th><th style={th}>Avg Entry</th><th style={th}>Current</th><th style={th}>P&L</th>
-                </tr>
-              </thead>
-              <tbody>
-                {portfolio.positions.map((p) => (
-                  <tr key={p.symbol} style={{ borderTop: "1px solid #1e1e2e" }}>
-                    <td style={td}><span style={{ color: "#e2e8f0", fontWeight: 600 }}>{p.symbol}</span></td>
-                    <td style={td}>{p.qty}</td>
-                    <td style={td}>${p.avgEntry.toFixed(2)}</td>
-                    <td style={td}>${p.currentPrice.toFixed(2)}</td>
-                    <td style={{ ...td, color: p.unrealizedPnl >= 0 ? "#4ade80" : "#ef4444" }}>
-                      {p.unrealizedPnl >= 0 ? "+" : ""}${p.unrealizedPnl.toFixed(2)}
-                    </td>
-                  </tr>
+          {/* Agent Briefing */}
+          <div style={{ padding: "20px 24px", borderBottom: "1px solid #1e1e2e" }}>
+            <div style={{ fontSize: 15, color: "#e2e8f0", lineHeight: 1.6, marginBottom: 8 }}>
+              {b?.headline ?? "No briefing available. Run the agent cycle first."}
+            </div>
+            {(b?.actions?.length ?? 0) > 0 && (
+              <div style={{ marginTop: 12 }}>
+                {b!.actions.map((a, i) => (
+                  <div key={i} style={{ color: "#a1a1aa", fontSize: 12, padding: "3px 0", display: "flex", gap: 6 }}>
+                    <span style={{ color: a.startsWith("Bought") || a.startsWith("Sold") ? "#4ade80" : a.startsWith("Alert") ? "#facc15" : "#6b7280" }}>
+                      {a.startsWith("Bought") ? "✅" : a.startsWith("Sold") ? "🔴" : a.startsWith("Alert") ? "⚠️" : "⏭️"}
+                    </span>
+                    <span>{a}</span>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          ) : (
-            <div style={{ color: "#52525b", padding: 12, textAlign: "center" }}>No open positions</div>
-          )}
-        </Panel>
-
-        {/* Signals */}
-        <Panel title={`Signals — ${signals.length} (7d)`}>
-          <div style={{ maxHeight: 280, overflowY: "auto" }}>
-            {signals.length > 0 ? signals.slice(0, 15).map((s, i) => (
-              <div key={i} style={{ display: "flex", gap: 8, padding: "6px 12px", borderTop: i > 0 ? "1px solid #1e1e2e" : "none", alignItems: "center" }}>
-                <span style={{ color: s.direction === "bull" ? "#4ade80" : "#ef4444", fontWeight: 700, width: 14 }}>
-                  {s.direction === "bull" ? "↑" : "↓"}
-                </span>
-                <span style={{ color: "#e2e8f0", fontWeight: 600, width: 50 }}>{s.ticker}</span>
-                <Badge text={s.signalType.replace("_", " ")} color={s.direction === "bull" ? "#065f46" : "#7f1d1d"} />
-                <span style={{ color: "#6b7280", fontSize: 11, flex: 1 }}>{s.detail?.slice(0, 50)}</span>
               </div>
-            )) : <div style={{ color: "#52525b", padding: 12, textAlign: "center" }}>No signals</div>}
+            )}
           </div>
-        </Panel>
 
-        {/* Scanner */}
-        <Panel title={`Scanner — ${scanner.length} results`} subtitle={
-          <div style={{ display: "flex", gap: 4 }}>
-            {(["entry,alert", "entry", "alert"] as const).map((f) => (
-              <button key={f} onClick={() => setScanFilter(f)} style={{
-                background: scanFilter === f ? "#3b82f6" : "#1e1e2e",
-                border: "1px solid #2e2e3e",
-                color: scanFilter === f ? "#fff" : "#6b7280",
-                padding: "2px 8px", borderRadius: 3, cursor: "pointer", fontSize: 10,
-              }}>{f.toUpperCase()}</button>
-            ))}
+          {/* Pending Approvals */}
+          {(b?.pendingApprovals?.length ?? 0) > 0 && (
+            <div style={{ padding: "16px 24px", borderBottom: "1px solid #1e1e2e" }}>
+              <div style={sectionTitle}>NEEDS YOUR APPROVAL</div>
+              {b!.pendingApprovals.map((p) => (
+                <div key={p.id} style={{ background: "#111119", borderRadius: 8, padding: 16, marginTop: 12, border: "1px solid #1e1e2e" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <div>
+                      <span style={{ fontSize: 16, fontWeight: 700, color: "#e2e8f0" }}>{p.ticker}</span>
+                      <span style={{ color: "#6b7280", marginLeft: 8, fontSize: 12 }}>BUY {p.shares} shares @ ${p.price.toFixed(2)}</span>
+                      <ConfBadge confidence={p.confidence} />
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button onClick={() => handleApprove(p)} disabled={approving === p.id} style={{ ...btnStyle, background: "#065f46", color: "#4ade80", fontWeight: 600 }}>
+                        {approving === p.id ? "..." : "APPROVE"}
+                      </button>
+                      <button onClick={() => handleSkip(p.id)} style={{ ...btnStyle, background: "#1e1e2e" }}>SKIP</button>
+                    </div>
+                  </div>
+                  <div style={{ color: "#d4d4d8", fontSize: 13, marginTop: 10, lineHeight: 1.6 }}>
+                    {p.aiContext}
+                  </div>
+                  <div style={{ display: "flex", gap: 16, marginTop: 10, fontSize: 11, color: "#6b7280" }}>
+                    <span>Stop: <span style={{ color: "#ef4444" }}>${p.stopLoss.toFixed(2)}</span></span>
+                    <span>Target: <span style={{ color: "#4ade80" }}>${p.takeProfit.toFixed(2)}</span></span>
+                    <span>Risk: ${p.riskAmount} ({p.riskPct}%)</span>
+                    {p.signals.length > 0 && <span>Signals: {p.signals.join(", ")}</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Watching */}
+          {(b?.watching?.length ?? 0) > 0 && (
+            <div style={{ padding: "16px 24px", borderBottom: "1px solid #1e1e2e" }}>
+              <div style={sectionTitle}>WATCHING</div>
+              {b!.watching.map((w, i) => (
+                <div key={i} style={{ display: "flex", gap: 8, padding: "8px 0", alignItems: "center", borderTop: i > 0 ? "1px solid #1e1e2e" : "none" }}>
+                  <span style={{ color: "#facc15" }}>👀</span>
+                  <span style={{ color: "#e2e8f0", fontWeight: 600, width: 55 }}>{w.ticker}</span>
+                  <span style={{ color: "#a1a1aa", fontSize: 12, flex: 1 }}>{w.reason}</span>
+                  <span style={{ color: "#6b7280", fontSize: 11 }}>~{w.estimatedDays}d</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Positions */}
+          <div style={{ padding: "16px 24px" }}>
+            <div style={sectionTitle}>POSITIONS ({b?.portfolio?.positions?.length ?? 0})</div>
+            {(b?.portfolio?.positions?.length ?? 0) > 0 ? b!.portfolio.positions.map((p) => (
+              <div key={p.symbol} style={{ display: "flex", gap: 12, padding: "10px 0", borderTop: "1px solid #1e1e2e", alignItems: "center" }}>
+                <div style={{ width: 55 }}>
+                  <div style={{ color: "#e2e8f0", fontWeight: 700 }}>{p.symbol}</div>
+                  <div style={{ color: "#6b7280", fontSize: 10 }}>{p.qty} shares</div>
+                </div>
+                <div style={{ flex: 1 }}>
+                  {/* P&L bar */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                    <div style={{ flex: 1, height: 6, background: "#1e1e2e", borderRadius: 3, overflow: "hidden" }}>
+                      <div style={{
+                        width: `${Math.min(Math.abs(p.pnlPct) * 5, 100)}%`,
+                        height: "100%",
+                        background: p.pnlPct >= 0 ? "#4ade80" : "#ef4444",
+                        borderRadius: 3,
+                      }} />
+                    </div>
+                    <span style={{ color: p.pnlPct >= 0 ? "#4ade80" : "#ef4444", fontSize: 12, fontWeight: 600, width: 55, textAlign: "right" }}>
+                      {p.pnlPct >= 0 ? "+" : ""}{p.pnlPct.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div style={{ color: "#6b7280", fontSize: 11 }}>{p.context}</div>
+                </div>
+                <div style={{ textAlign: "right", width: 80 }}>
+                  <div style={{ color: "#a1a1aa", fontSize: 12 }}>${p.currentPrice.toFixed(2)}</div>
+                  <div style={{ color: p.unrealizedPnl >= 0 ? "#4ade80" : "#ef4444", fontSize: 11 }}>
+                    {p.unrealizedPnl >= 0 ? "+" : ""}${p.unrealizedPnl.toFixed(2)}
+                  </div>
+                </div>
+              </div>
+            )) : (
+              <div style={{ color: "#52525b", padding: 16, textAlign: "center" }}>No positions. The agent will propose entries when opportunities arise.</div>
+            )}
           </div>
-        }>
-          <div style={{ maxHeight: 280, overflowY: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ color: "#6b7280", fontSize: 10, textAlign: "left" }}>
-                  <th style={th}>Ticker</th><th style={th}>Price</th><th style={th}>Zone</th><th style={th}>Type</th><th style={th}>Dir</th><th style={th}>TF</th><th style={th}>ATR</th>
-                </tr>
-              </thead>
-              <tbody>
-                {scanner.slice(0, 20).map((r, i) => (
-                  <tr key={i} style={{ borderTop: "1px solid #1e1e2e" }}>
-                    <td style={td}><span style={{ color: "#e2e8f0", fontWeight: 600 }}>{r.ticker}</span></td>
-                    <td style={td}>${Number(r.price).toFixed(2)}</td>
-                    <td style={td}><Badge text={r.zone} color={r.zone === "ENTRY" ? "#065f46" : "#78350f"} /></td>
-                    <td style={td}><Badge text={r.signalType} color="#1e1b4b" /></td>
-                    <td style={td}><span style={{ color: r.direction === "support" ? "#4ade80" : "#ef4444" }}>{r.direction}</span></td>
-                    <td style={td}>{r.timeframe}</td>
-                    <td style={td}>{Number(r.distanceAtr).toFixed(1)}</td>
-                  </tr>
+        </div>
+
+        {/* ── Right Column: Chat + Insight ────────────── */}
+        <div style={{ display: "flex", flexDirection: "column", background: "#0a0a12" }}>
+          {/* Performance */}
+          <div style={{ padding: "16px 16px", borderBottom: "1px solid #1e1e2e" }}>
+            <div style={sectionTitle}>AGENT INSIGHT</div>
+            <div style={{ color: "#a1a1aa", fontSize: 12, lineHeight: 1.6, marginTop: 6 }}>
+              {b?.performance?.insight ?? "No insights yet."}
+            </div>
+            {(b?.performance?.totalTrades ?? 0) > 0 && (
+              <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+                <MiniStat label="Win Rate" value={`${(b?.performance?.winRate ?? 0).toFixed(0)}%`} />
+                <MiniStat label="Trades" value={String(b?.performance?.totalTrades ?? 0)} />
+                {b?.performance?.bestSector && <MiniStat label="Best" value={b.performance.bestSector} />}
+              </div>
+            )}
+          </div>
+
+          {/* Chat */}
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "0 0 12px 0" }}>
+            <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px" }}>
+              {chatMessages.length === 0 && (
+                <div style={{ color: "#3f3f46", fontSize: 12, textAlign: "center", marginTop: 20 }}>
+                  Ask me anything about your portfolio, strategies, or the market.
+                </div>
+              )}
+              {chatMessages.map((m, i) => (
+                <div key={i} style={{
+                  padding: "8px 12px", marginTop: 8, borderRadius: 8, fontSize: 12, lineHeight: 1.5,
+                  background: m.role === "user" ? "#1e3a5f" : "#111119",
+                  color: m.role === "user" ? "#93c5fd" : "#d4d4d8",
+                  marginLeft: m.role === "user" ? 40 : 0,
+                  marginRight: m.role === "agent" ? 40 : 0,
+                }}>
+                  {m.text}
+                </div>
+              ))}
+            </div>
+            <div style={{ padding: "0 12px" }}>
+              <div style={{ display: "flex", gap: 6 }}>
+                <input
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleChat()}
+                  placeholder="Ask me anything..."
+                  style={{
+                    flex: 1, background: "#111119", border: "1px solid #2e2e3e", color: "#e2e8f0",
+                    padding: "8px 12px", borderRadius: 6, fontSize: 12, outline: "none",
+                  }}
+                />
+                <button onClick={handleChat} style={{ ...btnStyle, background: "#3b82f6", color: "#fff" }}>Send</button>
+              </div>
+              <div style={{ display: "flex", gap: 4, marginTop: 6, flexWrap: "wrap" }}>
+                {["Why this stock?", "What's my risk?", "Market outlook", "How am I doing?"].map((q) => (
+                  <button key={q} onClick={() => { setChatInput(q); }} style={{
+                    background: "none", border: "1px solid #2e2e3e", color: "#6b7280",
+                    padding: "3px 8px", borderRadius: 4, cursor: "pointer", fontSize: 10,
+                  }}>{q}</button>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        </Panel>
-
-        {/* Pipeline */}
-        <Panel title="Pipeline Status">
-          {pipeline.map((j) => (
-            <div key={j.jobName} style={{ display: "flex", justifyContent: "space-between", padding: "6px 12px", borderTop: "1px solid #1e1e2e" }}>
-              <span style={{ color: "#a1a1aa" }}>{j.jobName}</span>
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <span style={{ color: "#6b7280", fontSize: 11 }}>{j.completed}/{j.total}</span>
-                <Badge text={j.status} color={j.status === "idle" ? "#1e3a5f" : j.status === "running" ? "#065f46" : "#7f1d1d"} />
               </div>
             </div>
-          ))}
-        </Panel>
+          </div>
+        </div>
       </div>
-
-      <footer style={{ textAlign: "center", padding: 8, color: "#3f3f46", fontSize: 10, borderTop: "1px solid #1e1e2e" }}>
-        Money OS v4.0 — {universe.total} tickers — Screener API on localhost:3001
-      </footer>
     </div>
   );
 }
 
 // ── Components ───────────────────────────────────────────────
 
-function Panel({ title, subtitle, children }: { title: string; subtitle?: React.ReactNode; children: React.ReactNode }) {
+function HeaderStat({ label, value, sub, subColor }: { label: string; value: string; sub: string; subColor: string }) {
   return (
-    <div style={{ background: "#0f0f18", minHeight: 200 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", borderBottom: "1px solid #1e1e2e" }}>
-        <span style={{ color: "#a1a1aa", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>{title}</span>
-        {subtitle && <span style={{ color: "#6b7280", fontSize: 11 }}>{typeof subtitle === "string" ? subtitle : subtitle}</span>}
-      </div>
-      {children}
+    <div style={{ textAlign: "center", minWidth: 70 }}>
+      <div style={{ fontSize: 9, color: "#52525b", textTransform: "uppercase", letterSpacing: 1 }}>{label}</div>
+      <div style={{ fontSize: 14, fontWeight: 700, color: "#e2e8f0" }}>{value}</div>
+      <div style={{ fontSize: 10, color: subColor }}>{sub}</div>
     </div>
   );
 }
 
-function Stat({ label, value, color, sub }: { label: string; value: string; color: string; sub?: string }) {
+function MiniStat({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ textAlign: "center" }}>
-      <div style={{ fontSize: 10, color: "#6b7280", textTransform: "uppercase" }}>{label}</div>
-      <div style={{ fontSize: 14, fontWeight: 700, color }}>{value}</div>
-      {sub && <div style={{ fontSize: 9, color: "#52525b" }}>{sub}</div>}
+    <div style={{ background: "#111119", padding: "4px 8px", borderRadius: 4 }}>
+      <div style={{ fontSize: 9, color: "#52525b", textTransform: "uppercase" }}>{label}</div>
+      <div style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 600 }}>{value}</div>
     </div>
   );
 }
 
-function Badge({ text, color }: { text: string; color: string }) {
+function ConfBadge({ confidence }: { confidence: string }) {
+  const color = confidence === "high" ? "#065f46" : confidence === "medium" ? "#78350f" : "#1e1e2e";
+  const text = confidence === "high" ? "HIGH" : confidence === "medium" ? "MED" : "LOW";
+  const dot = confidence === "high" ? "🟢" : confidence === "medium" ? "🟡" : "⚪";
   return (
-    <span style={{
-      background: color, color: "#e2e8f0",
-      padding: "1px 6px", borderRadius: 3, fontSize: 10, fontWeight: 500,
-    }}>{text}</span>
+    <span style={{ background: color, color: "#e2e8f0", padding: "1px 6px", borderRadius: 3, fontSize: 10, marginLeft: 8 }}>
+      {dot} {text}
+    </span>
   );
 }
 
-const th: React.CSSProperties = { padding: "4px 12px", fontWeight: 500, borderBottom: "1px solid #1e1e2e" };
-const td: React.CSSProperties = { padding: "5px 12px", fontSize: 12 };
+// ── Styles ───────────────────────────────────────────────────
+
+const pageStyle: React.CSSProperties = {
+  background: "#0a0a0f", color: "#e4e4e7", minHeight: "100vh",
+  fontFamily: "-apple-system, 'SF Pro Text', 'Inter', sans-serif", fontSize: 13,
+};
+
+const sectionTitle: React.CSSProperties = {
+  color: "#52525b", fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.5,
+};
+
+const btnStyle: React.CSSProperties = {
+  background: "#1e1e2e", border: "1px solid #2e2e3e", color: "#a1a1aa",
+  padding: "5px 12px", borderRadius: 5, cursor: "pointer", fontSize: 11,
+};
