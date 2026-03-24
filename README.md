@@ -2,7 +2,7 @@
      MONEY OS — README
      ============================================================ -->
 
-![Version](https://img.shields.io/badge/version-3.1-blue)
+![Version](https://img.shields.io/badge/version-4.0-blue)
 ![License](https://img.shields.io/badge/license-open%20source-green)
 ![No Signup](https://img.shields.io/badge/signup-none%20required-brightgreen)
 ![Data Privacy](https://img.shields.io/badge/your%20data-stays%20local-blueviolet)
@@ -80,11 +80,12 @@ Open Claude and type any of these to start:
 
 | What you type | What happens |
 |---|---|
+| `/invest` | **NEW** — "I have $5K, grow it." Your financial GPS — tells you where to go, drives you there step by step. |
 | `/courage` | Start here if money feels overwhelming. No judgment, just clarity and a step-by-step game plan. |
 | `/freedom` | Find out the exact date work becomes optional for you. Takes 3 minutes. |
 | `/leak-scan` | Find hidden money you're losing right now. Most users find $2K–$8K/year in the first session. |
 
-> 💡 **Not sure where to start?** Type: `Hey Claude, run /money-os` — it'll ask a few questions and route you to the right place automatically.
+> **Not sure where to start?** Just say what you want: *"I have $5K and want to make it grow"* — Money OS figures out the rest. No commands to memorize.
 
 ### Alternative: Use as a Claude Code Skill
 
@@ -106,16 +107,18 @@ Your financial life
    │  💸 Layer 1-2 │ Cash Flow & Leak Detection          │
    │               │ /cash-flow  /leak-scan  /weekly-pulse│
    ├───────────────┼────────────────────────────────────  │
-   │  📊 Layer 3   │ Portfolio Intelligence               │
-   │               │ /portfolio-check  /rebalance         │
-   │               │ /macro-check  /tax-harvest           │
+   │  📊 Layer 3   │ Portfolio Intelligence & Screening    │
+   │               │ /portfolio-check  /rebalance          │
+   │               │ /macro-check  /tax-harvest            │
+   │               │ /screen  /signals  /watchlist         │
    ├───────────────┼────────────────────────────────────  │
    │  🧾 Layer 4   │ Tax Strategy                        │
    │               │ /tax-strategy  /tax-review           │
    ├───────────────┼────────────────────────────────────  │
-   │  🚀 Layer 5   │ Wealth Creation                     │
-   │               │ /freedom  /decide  /life-event       │
-   │               │ /generational  /thesis-to-trades     │
+   │  🚀 Layer 5   │ Wealth Creation                      │
+   │               │ /invest  /freedom  /decide            │
+   │               │ /life-event  /generational            │
+   │               │ /thesis-to-trades                     │
    ├───────────────┼────────────────────────────────────  │
    │  ❤️ Emotional │ Financial Courage & Education        │
    │               │ /courage  /learn                     │
@@ -297,6 +300,9 @@ No false precision. Every output includes confidence levels and explicit assumpt
 | `/portfolio-check` | Portfolio | Comprehensive health check: concentration risk, dead weight positions, missing diversification |
 | `/rebalance` | Portfolio | Tax-aware rebalancing plan with specific trades, DCA timeline, and execution sequence |
 | `/macro-check` | Portfolio | Monitor macroeconomic signals (VIX, yields, dollar, oil, gold) → portfolio-specific alerts |
+| `/screen` | Portfolio | **NEW** — Scan 110 stocks for entry opportunities near support/resistance, filtered by your portfolio |
+| `/signals` | Portfolio | **NEW** — Technical signals (RSI, MACD, divergence) in plain English, prioritized for your holdings |
+| `/watchlist` | Portfolio | **NEW** — Early warnings: stocks approaching key levels in the next 1-5 days |
 | `/tax-harvest` | Portfolio | Find tax-loss harvesting opportunities with wash-sale awareness and substitute positions |
 | `/tax-strategy` | Tax | Year-round proactive tax optimization: bracket management, Roth conversions, asset location, equity comp |
 | `/tax-review` | Tax | Analyze a tax return (1040, W-2, 1099s) to find missed deductions, credits, and optimization opportunities |
@@ -304,6 +310,7 @@ No false precision. Every output includes confidence levels and explicit assumpt
 | `/decide` | Wealth | Probability-weighted scenario modeling for any financial decision over 1–20 year horizons |
 | `/life-event` | Wealth | Financial action plans for: job change, baby, marriage, inheritance, home purchase, and more |
 | `/generational` | Wealth | Multi-generational wealth planning: Custodial Roth IRAs, 529 optimization, UGMA/UTMA |
+| `/invest` | Wealth | **NEW** — Financial GPS: say your goal, get 3 paths with real numbers, step-by-step execution |
 | `/thesis-to-trades` | Wealth | Convert an investment thesis into a portfolio gap analysis and specific trade recommendations |
 | `/courage` | Emotional | Financial coaching when money feels overwhelming — validates, clarifies, builds a game plan |
 | `/learn` | Emotional | Adaptive financial education that teaches through your real decisions, not lectures |
@@ -373,33 +380,39 @@ Your screen                       ← recommendations + next steps
 | Commands | Markdown + YAML frontmatter | Composable entry points for skills |
 | Profile storage | Local markdown files | Zero-trust, user-owned, version-controllable |
 | Control center | Node.js, plain `http.createServer` (no Express) | No framework lock-in |
+| Screener API | Next.js 15, TypeScript, Drizzle ORM | Real-time market screening engine |
+| Market data | Yahoo Finance (free, no API key) | 110 tickers, daily + weekly OHLCV |
+| Database | PostgreSQL (Supabase) | Bars, trendlines, signals, scanner results |
+| Engines | ATR, RSI, MACD, Zigzag, Trendline, Scanner, Signal, Backtest | Pure TypeScript, fully tested |
+| Paper trading | JSON-based virtual portfolio | $100K virtual capital, stop-loss/take-profit |
 | Freedom Calculator | Standalone HTML/JS | Works offline, no build step |
 
 ### Repository Structure
 
 ```
 .claude-plugin/         Plugin manifest
-  plugin.json
-skills/                 17 financial intelligence skills
+skills/                 20 financial intelligence skills
+  security-screener/    ← Market scanning + technical analysis
+  investment-navigator/ ← GPS-style investment guide + ADEPT coaching
   <skill-name>/
     SKILL.md            ← instruction set (YAML frontmatter + markdown)
     references/         ← domain knowledge (formulas, rules, stories)
-commands/               18 slash command entry points
+commands/               21 slash command entry points
   money-os.md           ← unified intent router
-  setup.md              ← guided onboarding
-  review.md             ← session review + profile update
+  invest.md             ← financial GPS entry point
+  screen.md             ← security scanner
 profile/                ← your local financial data (gitignored)
-  financial-identity.md
-  holdings.md
-  goals.md
-  history.md
 apps/
-  control-center/       Node.js dashboard (prototype, sample data)
+  screener-api/         Next.js data service (trendlines, scanner, signals)
+    lib/indicators/     ATR, RSI, MACD, Zigzag (pure TypeScript)
+    lib/engine/         Trendline, Scanner, Signal, Backtest, Paper Trader
+    __tests__/          53 unit + functional tests
+    scripts/            Pipeline runner, backtester, auto-trader
+  control-center/       Node.js dashboard (prototype)
   freedom-calculator/   Standalone HTML calculator
-docs/                   Architecture, security, PRDs
-scripts/cli/            Orchestration scripts
-  tool_router.js        Intent → service routing
-  advisor_response.js   LLM response generation
+docs/
+  prd/security-screener/  Architecture, PRD, Roadmap for screener
+  strategy/               Vision, game plan, competitive landscape
 ```
 
 <!-- ============================================================ -->
@@ -449,10 +462,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full checklist. [Browse good firs
 | Version | Status | What's In It |
 |---|---|---|
 | **v3.0** | ✅ Shipped | 16 skills, 15 commands — full coverage across 5 layers |
-| **v3.1** | ✅ Current | Profile persistence, shareable artifacts, unified `/money-os` entry, security architecture, Freedom Calculator |
-| **v3.2** | 🔨 Next | Self-evolution loop (profile auto-updates as you interact), longitudinal tracking |
-| **v3.3** | 📅 Planned | Social Security optimization, RMD management, age-threshold automation |
-| **v4.0** | 🔭 Future | Standalone data layer with cross-platform profile sync |
+| **v3.1** | ✅ Shipped | Profile persistence, shareable artifacts, unified `/money-os` entry |
+| **v4.0** | ✅ Current | Security Screener (110 stocks, real data), `/invest` GPS navigator, ADEPT coaching, paper trading, backtest engine, trade gate |
+| **v4.1** | 🔨 Next | Crypto support (CoinGecko), fundamental data (P/E, revenue growth), regime filter for bear markets |
+| **v4.2** | 📅 Planned | Alpaca broker integration, human-gated live trading with real money |
+| **v5.0** | 🔭 Future | Autonomous trading within pre-approved rules, continuous strategy learning |
 
 [Full standalone app roadmap →](ROADMAP.md)
 

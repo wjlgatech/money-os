@@ -31,6 +31,11 @@ If they already have a profile, greet them with context:
 
 Based on the user's input, route to the appropriate skill(s):
 
+### Investment Intent / "I Want to Invest" (HIGHEST PRIORITY — catch this before other routes)
+Triggers: I want to invest, I have money to invest, I have $X, make me money, grow my money, where should I put my money, how do I invest, I want to start investing, best investment, put my money to work, I have savings, make my money work, what should I invest in, help me invest, I'm ready to invest, new to investing, first time investing, how to make money in stocks, how to start with crypto, I have $5K, I have $10K
+→ **Route to: investment-navigator** (via /invest command)
+→ This is the GPS. The user states a destination, the navigator drives.
+
 ### Emotional / Overwhelm Signals
 Triggers: scared, anxious, overwhelmed, hopeless, drowning, stressed, can't save, what's the point, behind, too late, give up, depressed about money
 → **Route to: financial-courage**
@@ -83,6 +88,18 @@ Triggers: kids, college savings, 529, custodial, generational wealth, inheritanc
 Triggers: teach me about, what is a, how does X work, explain, learn about, financial literacy
 → **Route to: financial-educator**
 
+### Security Screening / Investment Candidates
+Triggers: scan for stocks, find me opportunities, what's near support, screen for value, show me entry zones, what should I buy, investment candidates, technical scan, screen
+→ **Route to: security-screener** (via /screen command)
+
+### Watchlist / Early Warnings
+Triggers: what's approaching, watchlist, early warnings, what should I watch this week, approaching levels
+→ **Route to: security-screener** (via /watchlist command)
+
+### Technical Signals
+Triggers: any signals today, technical alerts, what fired, RSI signals, divergence alerts, MACD, signals
+→ **Route to: security-screener** (via /signals command)
+
 ### Investment Thesis
 Triggers: investment thesis, framework, align my portfolio, map my holdings, strategy to trades
 → **Route to: thesis-to-trades**
@@ -106,7 +123,7 @@ Example: "Sounds like you want both a portfolio check and a tax optimization rev
 ### Meta Requests
 "What can you do?" → Show the full menu organized by the 5 layers:
 - Layer 1-2: Cash Flow (cash-flow, weekly-pulse, leak-scan)
-- Layer 3: Portfolio (portfolio-check, rebalance, macro-check, tax-harvest)
+- Layer 3: Portfolio (portfolio-check, rebalance, macro-check, tax-harvest, screen, watchlist, signals)
 - Layer 4: Tax Strategy (tax-strategy, tax-review)
 - Layer 5: Wealth Creation (freedom, decide, life-event, generational, thesis-to-trades)
 - Emotional Intelligence: courage, learn
@@ -114,7 +131,7 @@ Example: "Sounds like you want both a portfolio check and a tax optimization rev
 ## Profile Awareness
 
 When running any skill, first check if the user has a profile:
-1. Read `profile/financial-identity.md` for tax bracket, filing status, state
+1. Read `profile/financial-identity.md` for tax bracket, filing status, state, and **learning level**
 2. Read `profile/holdings.md` for portfolio data
 3. Read `profile/goals.md` for targets and Freedom Number
 4. Read `profile/history.md` for context on past interactions
@@ -122,6 +139,26 @@ When running any skill, first check if the user has a profile:
 If profile data is relevant to the current skill, inject it automatically so the user doesn't have to repeat themselves.
 
 If profile doesn't exist yet, the skill should work normally — just ask the user for the needed data and offer to save it to their profile when done.
+
+## ADEPT Coaching (applies to ALL skills)
+
+Money OS is a GPS AND a coach. Every interaction should make the user smarter — not by lecturing, but by weaving understanding into action.
+
+**ADEPT framework** (see `skills/investment-navigator/references/adept-framework.md`):
+- **A**nalogy — ground every concept in something they've felt ("support is the floor where the ball bounces")
+- **D**iagram — ASCII visuals when structure matters
+- **E**xample — use THEIR real numbers, not textbook examples
+- **P**lain interpretation — "here's what this means for YOUR decision"
+- **T**echnical abstraction — name the concept AFTER the intuition lands
+
+**Calibrate depth by learning level** (from profile):
+- Beginner: A + P only (analogy + plain interpretation)
+- Intermediate: A + D + E + P (add diagrams and their-money examples)
+- Advanced: full ADEPT (they can handle the technical layer)
+
+**The golden rule:** teach INSIDE the action, not before it. Never delay a decision to deliver a lesson.
+
+**Upgrade tracking:** When a user correctly uses a concept ("is RSI oversold?"), note it in their profile under `## Learning Level → Concepts mastered`. Next time, skip the analogy for that concept.
 
 ## Security Reminder
 

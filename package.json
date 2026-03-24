@@ -5,7 +5,9 @@
   "description": "Personal finance and investing operating system prototype",
   "scripts": {
     "dev": "node apps/control-center/server.js",
+    "dev:screener": "cd apps/screener-api && npx next dev --port 3001",
     "start": "node apps/control-center/server.js",
-    "test:smoke": "node scripts/test-control-center.js"
+    "test:smoke": "node scripts/test-control-center.js",
+    "test:screener": "cd apps/screener-api && npm test"
   }
 }

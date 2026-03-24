@@ -1,0 +1,10 @@
+{
+  "crons": [
+    { "path": "/api/cron/daily-bars", "schedule": "0 22 * * 1-5" },
+    { "path": "/api/cron/weekly-bars", "schedule": "30 22 * * 1" },
+    { "path": "/api/cron/vix", "schedule": "30 21 * * 1-5" },
+    { "path": "/api/cron/trendlines", "schedule": "30 22 * * 1-5" },
+    { "path": "/api/cron/signals", "schedule": "0 23 * * 1-5" },
+    { "path": "/api/cron/scanner", "schedule": "15 23 * * 1-5" }
+  ]
+}

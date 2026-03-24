@@ -23,14 +23,15 @@ profile/
 *.plugin
 zi8yzqxH
 
+# Paper trading data (user-specific)
+apps/screener-api/data/paper-portfolio.json
+apps/screener-api/data/trade-gate.json
+!apps/screener-api/.env.local.example
+
 # Playwright
 .playwright-cli/
 
-# Preview files (generated copies — originals live in apps/ and skills/)
-freedom-calculator.html
-freedom-card-preview.html
-leak-card-preview.html
-courage-card-preview.html
+# Preview files (if regenerated at root)
 landing-page.html
 campaign-dashboard.html
 

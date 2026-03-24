@@ -52,16 +52,17 @@ Core responsibilities:
 - Order submission tracking
 - Post-trade verification
 
-## Repository target shape
+## Repository shape (current)
 
-- `apps/control-center`: end-user dashboard and workflow UI
-- `apps/advisor-api`: orchestration, policy checks, and portfolio intelligence APIs
-- `apps/control-plane`: operations UI, incidents, review queues, and runbooks
-- `packages/domain`: canonical financial schemas and shared business logic
-- `packages/connectors`: external account and execution provider adapters
-- `packages/intelligence`: exposure, scenario, memo, and planning modules
-- `packages/controls`: policy, approvals, audit, and kill-switch primitives
-- `packages/observability`: metrics, traces, data quality, and health scoring
+- `apps/screener-api`: Next.js 15 data service — market data ingestion, trendline/scanner/signal engines, paper trading, trade gate APIs
+- `apps/control-center`: Node.js dashboard prototype
+- `apps/freedom-calculator`: standalone HTML calculator
+- `skills/`: 20 Claude skills (markdown instruction sets)
+- `skills/security-screener/`: market screening with portfolio-aware filtering
+- `skills/investment-navigator/`: GPS-style investment guide with ADEPT coaching framework
+- `commands/`: 21 slash command entry points
+- `docs/prd/security-screener/`: Architecture, PRD, Roadmap for the screener subsystem
+- `docs/strategy/`: vision, game plan, competitive landscape
 
 ## Core data model
 
