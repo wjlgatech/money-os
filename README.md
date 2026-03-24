@@ -87,6 +87,17 @@ Open Claude and type any of these to start:
 
 > **Not sure where to start?** Just say what you want: *"I have $5K and want to make it grow"* — Money OS figures out the rest. No commands to memorize.
 
+### Web Dashboard (real-time market data)
+
+```bash
+cd apps/screener-api
+npm install
+npm run dev          # starts on localhost:3001
+# Open http://localhost:3001/dashboard
+```
+
+The dashboard shows: scanner results (213 stocks near key levels), signals (RSI, MACD, divergence), portfolio (Alpaca paper trading), VIX, and pipeline status — all from real market data.
+
 ### Alternative: Use as a Claude Code Skill
 
 ```bash
