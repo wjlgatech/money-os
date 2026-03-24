@@ -41,6 +41,11 @@ Triggers: I saw a strategy, test this idea, I want to try, compare strategies, w
 → **Route to: strategy-lab** (via /strategy-lab command)
 → The user has an idea. Help them formalize it, test it, and know whether it works — before risking money.
 
+### Portfolio Import / Connect Accounts
+Triggers: import my portfolio, here's my Fidelity, screenshot of my holdings, add my Coinbase, import from Moomoo, here's what I own, connect my accounts, import from Kraken, upload portfolio, here's my brokerage, sync my holdings
+→ **Route to: portfolio-import** (via /import-portfolio command)
+→ User shares a screenshot, pastes text, or describes holdings. Claude vision extracts everything.
+
 ### Emotional / Overwhelm Signals
 Triggers: scared, anxious, overwhelmed, hopeless, drowning, stressed, can't save, what's the point, behind, too late, give up, depressed about money
 → **Route to: financial-courage**

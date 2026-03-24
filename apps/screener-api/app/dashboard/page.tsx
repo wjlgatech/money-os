@@ -228,6 +228,12 @@ export default function DashboardV2() {
                       <span style={{ color: (status as string).includes("Connected") ? "#4ade80" : "#6b7280", fontSize: 11 }}>{status as string}</span>
                     </div>
                   ))}
+                  <div style={{ marginTop: 8, padding: "8px 10px", background: "#111119", borderRadius: 6, border: "1px solid #1e1e2e" }}>
+                    <div style={{ color: "#a1a1aa", fontSize: 11, marginBottom: 4 }}>Import your real portfolio:</div>
+                    <div style={{ color: "#6b7280", fontSize: 11, lineHeight: 1.6 }}>
+                      In Claude, say <span style={{ color: "#3b82f6" }}>/import-portfolio</span> and share a screenshot of your Fidelity, Moomoo, Coinbase, or Kraken positions page. AI vision extracts all holdings automatically — no API keys or OAuth needed.
+                    </div>
+                  </div>
                 </div>
               </Expandable>
             </div>
