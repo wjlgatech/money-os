@@ -2,6 +2,7 @@ import { computeTrendlines, projectTrendline, type TrendlineCandidate } from "./
 import { scanTicker } from "./scannerEngine";
 import { generateSignals } from "./signalEngine";
 import { latestATR, calcATR } from "../indicators/atr";
+import { detectRegime, regimePositionMultiplier } from "../indicators/regime";
 import type { TimedOHLCBar } from "../indicators/zigzag";
 
 // ── Types ────────────────────────────────────────────────────
@@ -14,6 +15,7 @@ export interface BacktestConfig {
   takeProfitPct: number;       // take profit at N% gain
   vix: number;                 // fixed VIX for backtesting (or array per day)
   entryConfirmation: number;   // min number of confirming signals to enter
+  useRegimeFilter: boolean;    // gate entries by market regime (SPY-based)
 }
 
 export interface Trade {
@@ -77,6 +79,7 @@ const DEFAULT_CONFIG: BacktestConfig = {
   takeProfitPct: 0.10,        // 10% take profit
   vix: 20,
   entryConfirmation: 1,       // at least 1 confirming signal
+  useRegimeFilter: true,      // enabled by default
 };
 
 // ── Single Ticker Backtest ───────────────────────────────────
@@ -95,7 +98,8 @@ export function backtestTicker(
   ticker: string,
   dailyBars: TimedOHLCBar[],
   weeklyBars: TimedOHLCBar[],
-  config: Partial<BacktestConfig> = {}
+  config: Partial<BacktestConfig> = {},
+  benchmarkCloses?: number[] // SPY daily closes for regime detection
 ): BacktestResult {
   const cfg = { ...DEFAULT_CONFIG, ...config };
 
@@ -180,6 +184,17 @@ export function backtestTicker(
 
     // ── Entry Logic ──────────────────────────────────────
 
+    // Regime filter: check market regime before entering
+    if (cfg.useRegimeFilter && benchmarkCloses && benchmarkCloses.length > 50) {
+      // Use benchmark closes up to the current bar index
+      const benchmarkSlice = benchmarkCloses.slice(0, Math.min(i + 1, benchmarkCloses.length));
+      if (benchmarkSlice.length >= 50) {
+        const regime = detectRegime(benchmarkSlice);
+        const multiplier = regimePositionMultiplier(regime.regime);
+        if (multiplier === 0) continue; // Skip entry in bear market
+      }
+    }
+
     // Compute trendlines using bars up to today
     const lookbackBars = dailyBars.slice(0, i + 1);
     const weeklyLookback = weeklyBars.filter(
@@ -224,7 +239,15 @@ export function backtestTicker(
     if (bullishSignals.length < cfg.entryConfirmation) continue;
 
     // ── Execute Entry ────────────────────────────────────
-    const positionSize = cfg.initialCapital * cfg.maxPositionPct;
+    // Adjust position size by regime (full in bull, half in sideways)
+    let regimeMultiplier = 1.0;
+    if (cfg.useRegimeFilter && benchmarkCloses) {
+      const benchSlice = benchmarkCloses.slice(0, Math.min(i + 1, benchmarkCloses.length));
+      if (benchSlice.length >= 50) {
+        regimeMultiplier = regimePositionMultiplier(detectRegime(benchSlice).regime);
+      }
+    }
+    const positionSize = cfg.initialCapital * cfg.maxPositionPct * regimeMultiplier;
     const shares = Math.floor(positionSize / todayPrice);
     if (shares === 0) continue;
 
@@ -281,14 +304,15 @@ export function backtestPortfolio(
     weeklyBars: TimedOHLCBar[];
     sector?: string;
   }>,
-  config: Partial<BacktestConfig> = {}
+  config: Partial<BacktestConfig> = {},
+  benchmarkCloses?: number[] // SPY daily closes for regime detection
 ): PortfolioBacktestResult {
   const cfg = { ...DEFAULT_CONFIG, ...config };
 
   // Run individual backtests
   const allTrades: Trade[] = [];
   for (const { ticker, dailyBars, weeklyBars } of tickerData) {
-    const result = backtestTicker(ticker, dailyBars, weeklyBars, cfg);
+    const result = backtestTicker(ticker, dailyBars, weeklyBars, cfg, benchmarkCloses);
     allTrades.push(...result.trades);
   }
 

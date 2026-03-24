@@ -16,11 +16,19 @@ export const config = {
   redisRestUrl: process.env.UPSTASH_REDIS_REST_URL ?? "",
   redisRestToken: process.env.UPSTASH_REDIS_REST_TOKEN ?? "",
 
-  // Alpaca
+  // Alpaca Data API
   alpacaApiKey: process.env.ALPACA_API_KEY ?? "",
   alpacaApiSecret: process.env.ALPACA_API_SECRET ?? "",
   alpacaBaseUrl:
     process.env.ALPACA_BASE_URL ?? "https://data.alpaca.markets",
+
+  // Alpaca Trading API (paper or live)
+  hasAlpacaTrading: Boolean(
+    process.env.ALPACA_TRADING_KEY && process.env.ALPACA_TRADING_SECRET
+  ),
+  alpacaTradingKey: process.env.ALPACA_TRADING_KEY ?? "",
+  alpacaTradingSecret: process.env.ALPACA_TRADING_SECRET ?? "",
+  alpacaPaperMode: process.env.ALPACA_PAPER_MODE !== "false", // default: paper
 
   // Auth
   screenerApiToken: process.env.SCREENER_API_TOKEN ?? "",

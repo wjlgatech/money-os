@@ -2,13 +2,15 @@
  * Daily Auto-Trader
  *
  * Reads today's scanner + signal results from the database,
- * generates trade proposals, executes approved ones in paper trading.
+ * generates trade proposals, executes approved ones.
+ *
+ * Auto-detects backend: Alpaca (if keys configured) or paper (local JSON).
  *
  * Run after the daily pipeline completes:
- *   npx tsx scripts/daily-auto-trader.ts [--execute]
+ *   npx tsx scripts/daily-auto-trader.ts [--execute] [--backend=alpaca|paper]
  *
  * Without --execute: shows proposals only (dry run)
- * With --execute: executes proposals into paper portfolio
+ * With --execute: executes proposals via detected/specified backend
  */
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" });
@@ -18,57 +20,32 @@ async function main() {
   const { scanResults, tradingSignals, bars, watchedTickers } = await import("../lib/db/schema");
   const { eq, and, desc } = await import("drizzle-orm");
   const { latestATR } = await import("../lib/indicators/atr");
-  const { PaperTrader } = await import("../lib/engine/paperTrader");
-  const { readFile, writeFile, mkdir } = await import("fs/promises");
-  const { existsSync } = await import("fs");
-  const path = await import("path");
+  const { TradeExecutor } = await import("../lib/broker/executor");
 
   if (!db) { console.error("No database"); process.exit(1); }
 
   const executeMode = process.argv.includes("--execute");
+  const backendArg = process.argv.find((a) => a.startsWith("--backend="));
+  const backendOverride = backendArg?.split("=")[1] as "paper" | "alpaca" | undefined;
 
-  // Load or create paper portfolio
-  const portfolioPath = path.join(process.cwd(), "data", "paper-portfolio.json");
-  let trader: InstanceType<typeof PaperTrader>;
-  try {
-    const json = await readFile(portfolioPath, "utf8");
-    trader = PaperTrader.fromJSON(json);
-  } catch {
-    trader = new PaperTrader();
-  }
-
-  const portfolio = trader.getPortfolio();
-  const totalValue = portfolio.cash + portfolio.positions.reduce(
-    (s, p) => s + p.currentPrice * p.shares, 0
-  );
+  // Initialize executor (auto-detects Alpaca vs paper)
+  const executor = new TradeExecutor(backendOverride);
+  const portfolio = await executor.getPortfolio();
+  const totalValue = portfolio.equity;
 
   console.log("\n📊 DAILY AUTO-TRADER");
   console.log("═".repeat(70));
+  console.log(`Backend: ${portfolio.backend.toUpperCase()} ${portfolio.backend === "alpaca" ? "(broker)" : "(local)"}`);
   console.log(`Mode: ${executeMode ? "🔴 LIVE EXECUTION" : "👀 DRY RUN (add --execute to trade)"}`);
   console.log(`Portfolio: $${totalValue.toFixed(2)} | Cash: $${portfolio.cash.toFixed(2)} | Positions: ${portfolio.positions.length}`);
   console.log("");
 
-  // ── Step 1: Check exits on existing positions ────────────
+  // ── Step 1: Show existing positions ───────────────────
   if (portfolio.positions.length > 0) {
-    console.log("CHECKING EXITS on existing positions...");
-    const currentPrices: Record<string, number> = {};
-
+    console.log("CURRENT POSITIONS:");
     for (const pos of portfolio.positions) {
-      const latestBar = await db.select().from(bars)
-        .where(and(eq(bars.ticker, pos.ticker), eq(bars.timeframe, "daily")))
-        .orderBy(desc(bars.ts)).limit(1);
-      if (latestBar.length > 0) {
-        currentPrices[pos.ticker] = Number(latestBar[0].close);
-      }
-    }
-
-    const exitTrades = trader.checkExits(currentPrices);
-    if (exitTrades.length > 0) {
-      for (const t of exitTrades) {
-        console.log(`  🔴 SOLD ${t.ticker} | ${t.shares} shares @ $${t.price} | ${t.reason} | P&L: $${t.pnl}`);
-      }
-    } else {
-      console.log("  No exits triggered.");
+      const pnlSign = pos.unrealizedPnl >= 0 ? "+" : "";
+      console.log(`  ${pos.symbol.padEnd(6)} | ${pos.qty} shares @ $${pos.avgEntry.toFixed(2)} | now $${pos.currentPrice.toFixed(2)} | ${pnlSign}$${pos.unrealizedPnl.toFixed(2)}`);
     }
     console.log("");
   }
@@ -82,7 +59,7 @@ async function main() {
   if (entryResults.length === 0) {
     console.log("  No ENTRY zone signals today.");
     console.log("\nDone.");
-    if (executeMode) await save(trader, portfolioPath);
+
     process.exit(0);
   }
 
@@ -92,7 +69,7 @@ async function main() {
 
   for (const scan of entryResults) {
     // Skip if we already have a position
-    if (portfolio.positions.find((p) => p.ticker === scan.ticker)) {
+    if (portfolio.positions.find((p) => p.symbol === scan.ticker)) {
       continue;
     }
 
@@ -129,15 +106,25 @@ async function main() {
 
     if (shares <= 0) continue;
 
-    const proposal = trader.createProposal(
-      scan.ticker, "buy", shares, price,
-      `ENTRY zone: ${scan.direction} ${scan.timeframe} trendline, ` +
-      `${bullSignals.length} confirming signal(s)`,
-      bullSignals.map((s) => s.signalType),
-      stopLoss, takeProfit
-    );
+    const signalNames = bullSignals.map((s) => s.signalType);
+    const riskAmount = shares * (price - stopLoss);
+    const riskPct = (riskAmount / totalValue) * 100;
+    let confidence: "low" | "medium" | "high" = "low";
+    if (signalNames.length >= 3) confidence = "high";
+    else if (signalNames.length >= 2) confidence = "medium";
 
-    proposals.push(proposal);
+    proposals.push({
+      ticker: scan.ticker,
+      shares,
+      estimatedPrice: price,
+      stopLoss,
+      takeProfit,
+      reason: `ENTRY zone: ${scan.direction} ${scan.timeframe} trendline, ${bullSignals.length} confirming signal(s)`,
+      signals: signalNames,
+      riskAmount: Number(riskAmount.toFixed(2)),
+      riskPct: Number(riskPct.toFixed(2)),
+      confidence,
+    });
   }
 
   // Deduplicate: keep best proposal per ticker (most confirming signals)
@@ -161,7 +148,7 @@ async function main() {
   if (proposals.length === 0) {
     console.log("  ENTRY zone stocks found but none passed position sizing filters.");
     console.log("\nDone.");
-    if (executeMode) await save(trader, portfolioPath);
+
     process.exit(0);
   }
 
@@ -172,7 +159,7 @@ async function main() {
   for (const p of proposals) {
     const conf = p.confidence === "high" ? "🟢" : p.confidence === "medium" ? "🟡" : "⚪";
     console.log(
-      `${conf} ${p.side.toUpperCase()} ${p.shares} ${p.ticker} @ ~$${p.estimatedPrice.toFixed(2)}`
+      `${conf} BUY ${p.shares} ${p.ticker} @ ~$${p.estimatedPrice.toFixed(2)}`
     );
     console.log(`   Stop: $${p.stopLoss?.toFixed(2)} | Target: $${p.takeProfit?.toFixed(2)} | Risk: $${p.riskAmount} (${p.riskPct}%)`);
     console.log(`   Reason: ${p.reason}`);
@@ -182,39 +169,30 @@ async function main() {
 
   // ── Step 4: Execute if in execute mode ───────────────────
   if (executeMode) {
-    console.log("🔴 EXECUTING...");
+    console.log(`🔴 EXECUTING via ${portfolio.backend.toUpperCase()}...`);
     for (const p of proposals) {
-      try {
-        const trade = trader.executeBuy(
-          p.ticker, p.shares, p.estimatedPrice, p.reason,
-          p.stopLoss, p.takeProfit, p.signals
-        );
-        console.log(`  ✅ Bought ${trade.shares} ${trade.ticker} @ $${trade.price}`);
-      } catch (err) {
-        console.log(`  ❌ Failed ${p.ticker}: ${(err as Error).message}`);
+      const result = await executor.executeBuy(
+        p.ticker, p.shares, p.estimatedPrice,
+        p.stopLoss, p.takeProfit,
+        p.reason, p.signals
+      );
+      if (result.success) {
+        const fill = result.filledPrice ? ` @ $${result.filledPrice}` : "";
+        console.log(`  ✅ ${result.ticker} ${result.shares} shares${fill} [${result.backend}] ${result.orderId ?? ""}`);
+      } else {
+        console.log(`  ❌ ${result.ticker}: ${result.message}`);
       }
     }
 
-    await save(trader, portfolioPath);
-
-    const snapshot = trader.getSnapshot(
-      Object.fromEntries(proposals.map((p) => [p.ticker, p.estimatedPrice]))
-    );
-    console.log(`\nPortfolio after trades: $${snapshot.totalValue} | Cash: $${snapshot.cash} | Positions: ${snapshot.openPositions}`);
+    const updated = await executor.getPortfolio();
+    console.log(`\nPortfolio: $${updated.equity.toFixed(2)} | Cash: $${updated.cash.toFixed(2)} | Positions: ${updated.positions.length}`);
   } else {
-    console.log("👀 Dry run complete. Add --execute to place these trades.");
+    console.log(`👀 Dry run complete. Add --execute to trade via ${portfolio.backend.toUpperCase()}.`);
   }
 
   process.exit(0);
 }
 
-async function save(trader: any, path: string) {
-  const { writeFile, mkdir } = await import("fs/promises");
-  const { existsSync } = await import("fs");
-  const dir = (await import("path")).dirname(path);
-  if (!existsSync(dir)) await mkdir(dir, { recursive: true });
-  await writeFile(path, trader.toJSON());
-  console.log("Portfolio saved.");
-}
+
 
 main().catch((e) => { console.error(e); process.exit(1); });
