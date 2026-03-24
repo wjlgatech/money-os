@@ -28,7 +28,10 @@ export const config = {
   ),
   alpacaTradingKey: process.env.ALPACA_TRADING_KEY ?? "",
   alpacaTradingSecret: process.env.ALPACA_TRADING_SECRET ?? "",
-  alpacaPaperMode: process.env.ALPACA_PAPER_MODE !== "false", // default: paper
+  // Live trading requires BOTH flags set — defense against accidental live mode
+  alpacaPaperMode:
+    process.env.ALPACA_PAPER_MODE !== "false" ||
+    process.env.ALPACA_LIVE_CONFIRM !== "yes-i-understand",
 
   // Financial Modeling Prep (fundamentals + earnings)
   fmpApiKey: process.env.FMP_API_KEY ?? "",

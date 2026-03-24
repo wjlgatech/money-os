@@ -12,6 +12,7 @@
 import { TradeExecutor, type ExecutionResult } from "../broker/executor";
 import { TradeGate } from "../engine/tradeGate";
 import { detectRegime, type RegimeResult } from "../indicators/regime";
+import { constitutionalReview, reviewVerdict, type TradeContext } from "./constitution";
 import { readFile, writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
@@ -271,6 +272,34 @@ export class MoneyAgent {
         if (signalNames.length >= 3) confidence = "high";
         else if (signalNames.length >= 2) confidence = "medium";
 
+        // ── Constitutional review (non-negotiable) ──────────
+        const tradeCtx: TradeContext = {
+          ticker: c.ticker,
+          side: "buy",
+          shares,
+          price: c.price,
+          portfolioEquity: portfolio.equity,
+          portfolioCash: portfolio.cash,
+          currentPositionCount: portfolio.positions.length,
+          existingPositionInTicker: ownedTickers.has(c.ticker),
+          regime: regime.regime,
+          vix,
+          signalCount: signalNames.length,
+          dayTradeCount: actions.filter((a) => a.type === "buy").length,
+        };
+        const checks = constitutionalReview(tradeCtx);
+        const verdict = reviewVerdict(checks);
+
+        if (!verdict.approved) {
+          actions.push({
+            type: "skip",
+            ticker: c.ticker,
+            detail: `Constitutional BLOCK: ${verdict.reasoning}`,
+            automatic: true,
+          });
+          continue;
+        }
+
         // Check auto-approval rules
         const cost = shares * c.price;
         const autoApprove =
@@ -282,7 +311,7 @@ export class MoneyAgent {
           // Execute immediately
           const result = await this.executor.executeBuy(
             c.ticker, shares, c.price, stopLoss, takeProfit,
-            `Agent auto-buy: ${c.direction} ${c.timeframe} support, ${signalNames.length} signals`,
+            `Agent auto-buy: ${c.direction} ${c.timeframe} support, ${signalNames.length} signals. Constitutional: ${verdict.reasoning}`,
             signalNames
           );
           actions.push({

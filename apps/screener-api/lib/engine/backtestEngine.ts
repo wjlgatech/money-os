@@ -119,6 +119,7 @@ export function backtestTicker(
 
   // We need at least 40 bars of lookback before we start trading
   const lookbackPeriod = 40;
+  let cachedTrendlines: TrendlineCandidate[] = [];
 
   for (let i = lookbackPeriod; i < dailyBars.length; i++) {
     const today = dailyBars[i];
@@ -202,16 +203,16 @@ export function backtestTicker(
     );
 
     // Only recompute trendlines every 5 days (performance)
-    let trendlineCandidates: TrendlineCandidate[] = [];
+    // NOTE: cachedTrendlines is hoisted above the loop — persists between iterations
     if (i % 5 === 0 || i === lookbackPeriod) {
       const dailyTLs = computeTrendlines(ticker, "daily", lookbackBars, 5);
       const weeklyTLs = weeklyLookback.length >= 20
         ? computeTrendlines(ticker, "weekly", weeklyLookback, 5)
         : [];
-      trendlineCandidates = [...dailyTLs, ...weeklyTLs];
+      cachedTrendlines = [...dailyTLs, ...weeklyTLs];
     }
 
-    if (trendlineCandidates.length === 0) continue;
+    if (cachedTrendlines.length === 0) continue;
 
     // Compute ATR
     const atr = latestATR(lookbackBars.slice(-20));
@@ -220,7 +221,7 @@ export function backtestTicker(
     // Run scanner
     const scanResults = scanTicker(
       ticker, "stock", todayPrice, atr, cfg.vix,
-      trendlineCandidates, null, new Date(today.ts)
+      cachedTrendlines, null, new Date(today.ts)
     );
 
     const entryResults = scanResults.filter((r) => r.zone === "ENTRY");
@@ -233,7 +234,7 @@ export function backtestTicker(
       close: b.close,
       ts: b.ts,
     }));
-    const signals = generateSignals(ticker, "daily", engineBars, trendlineCandidates);
+    const signals = generateSignals(ticker, "daily", engineBars, cachedTrendlines);
     const bullishSignals = signals.filter((s) => s.direction === "bull");
 
     if (bullishSignals.length < cfg.entryConfirmation) continue;

@@ -64,6 +64,37 @@ export interface OrderRequest {
   stop_price?: number;
 }
 
+// ── Validation ───────────────────────────────────────────────
+
+const SYMBOL_PATTERN = /^[A-Z0-9./-]{1,20}$/;
+const UUID_PATTERN = /^[0-9a-f-]{36}$/;
+
+function validateSymbol(symbol: string): string {
+  if (!SYMBOL_PATTERN.test(symbol)) {
+    throw new Error(`Invalid symbol: "${symbol}" — must be 1-20 uppercase alphanumeric chars`);
+  }
+  return encodeURIComponent(symbol);
+}
+
+function validateOrderId(id: string): string {
+  if (!UUID_PATTERN.test(id)) {
+    throw new Error(`Invalid order ID: "${id}" — must be UUID format`);
+  }
+  return id;
+}
+
+function validateQty(qty: number): void {
+  if (!Number.isFinite(qty) || qty <= 0 || !Number.isInteger(qty)) {
+    throw new Error(`Invalid quantity: ${qty} — must be a positive integer`);
+  }
+}
+
+function validatePrice(price: number): void {
+  if (!Number.isFinite(price) || price <= 0) {
+    throw new Error(`Invalid price: ${price} — must be a positive number`);
+  }
+}
+
 // ── Client ───────────────────────────────────────────────────
 
 export class AlpacaBroker {
@@ -106,11 +137,11 @@ export class AlpacaBroker {
   }
 
   async getPosition(symbol: string): Promise<AlpacaPosition> {
-    return this.request("GET", `/v2/positions/${symbol}`);
+    return this.request("GET", `/v2/positions/${validateSymbol(symbol)}`);
   }
 
   async closePosition(symbol: string): Promise<AlpacaOrder> {
-    return this.request("DELETE", `/v2/positions/${symbol}`);
+    return this.request("DELETE", `/v2/positions/${validateSymbol(symbol)}`);
   }
 
   async closeAllPositions(): Promise<{ statuses: Array<{ symbol: string; status: number }> }> {
@@ -120,11 +151,15 @@ export class AlpacaBroker {
   // ── Orders ─────────────────────────────────────────────
 
   async submitOrder(order: OrderRequest): Promise<AlpacaOrder> {
+    validateSymbol(order.symbol);
+    validateQty(order.qty);
+    if (order.limit_price) validatePrice(order.limit_price);
+    if (order.stop_price) validatePrice(order.stop_price);
     return this.request("POST", "/v2/orders", order);
   }
 
   async getOrder(orderId: string): Promise<AlpacaOrder> {
-    return this.request("GET", `/v2/orders/${orderId}`);
+    return this.request("GET", `/v2/orders/${validateOrderId(orderId)}`);
   }
 
   async getOrders(status: "open" | "closed" | "all" = "open", limit: number = 50): Promise<AlpacaOrder[]> {
@@ -132,7 +167,7 @@ export class AlpacaBroker {
   }
 
   async cancelOrder(orderId: string): Promise<void> {
-    await this.request("DELETE", `/v2/orders/${orderId}`);
+    await this.request("DELETE", `/v2/orders/${validateOrderId(orderId)}`);
   }
 
   async cancelAllOrders(): Promise<void> {
@@ -191,6 +226,10 @@ export class AlpacaBroker {
     stopLoss: number,
     takeProfit: number
   ): Promise<AlpacaOrder> {
+    validateSymbol(symbol);
+    validateQty(qty);
+    validatePrice(stopLoss);
+    validatePrice(takeProfit);
     return this.request("POST", "/v2/orders", {
       symbol,
       qty: String(qty),
@@ -247,6 +286,7 @@ export class AlpacaBroker {
     const options: RequestInit = {
       method,
       headers: this.headers,
+      signal: AbortSignal.timeout(10_000), // 10s timeout
     };
     if (body) {
       options.body = JSON.stringify(body);
@@ -256,7 +296,13 @@ export class AlpacaBroker {
 
     if (!response.ok) {
       const errorBody = await response.text();
-      throw new Error(`Alpaca ${method} ${path} failed (${response.status}): ${errorBody}`);
+      // Parse Alpaca error for structured handling
+      let alpacaCode = "unknown";
+      try {
+        const parsed = JSON.parse(errorBody);
+        alpacaCode = parsed.code ?? parsed.message ?? "unknown";
+      } catch { /* raw text error */ }
+      throw new Error(`Alpaca ${method} ${path} failed (${response.status}, code: ${alpacaCode}): ${errorBody}`);
     }
 
     if (response.status === 204) return undefined as T;

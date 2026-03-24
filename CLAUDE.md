@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## gstack
+Use /browse from gstack for all web browsing. Never use mcp__claude-in-chrome__* tools.
+Available skills: /office-hours, /plan-ceo-review, /plan-eng-review, /plan-design-review,
+/design-consultation, /review, /ship, /land-and-deploy, /canary, /benchmark, /browse,
+/qa, /qa-only, /design-review, /setup-browser-cookies, /setup-deploy, /retro,
+/investigate, /document-release, /codex, /cso, /careful, /freeze, /guard,
+/unfreeze, /gstack-upgrade.
+
 ## What Is This
 
 Money OS is a financial AI co-pilot (Claude plugin) with 20 skills, a market screening data service, paper trading, and a backtest engine. It covers cash flow, portfolio intelligence, tax strategy, wealth creation, and emotional coaching — all with real market data and zero-trust local-only architecture for personal financial data.
