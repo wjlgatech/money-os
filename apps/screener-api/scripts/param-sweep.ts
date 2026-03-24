@@ -48,16 +48,19 @@ async function main() {
   );
 
   const configs = [
-    // Without regime filter (baseline — same as before)
-    { name: "NO FILTER: 1.5ATR, 1 confirm, 10%TP",          stopLossAtrMultiple: 1.5, entryConfirmation: 1, takeProfitPct: 0.10, useRegimeFilter: false },
-    { name: "NO FILTER: Scalp 2.0ATR, 0 confirm, 5%TP",     stopLossAtrMultiple: 2.0, entryConfirmation: 0, takeProfitPct: 0.05, useRegimeFilter: false },
-    // With regime filter
-    { name: "REGIME: 1.5ATR, 1 confirm, 10%TP",             stopLossAtrMultiple: 1.5, entryConfirmation: 1, takeProfitPct: 0.10, useRegimeFilter: true },
-    { name: "REGIME: 2.0ATR, 1 confirm, 8%TP",              stopLossAtrMultiple: 2.0, entryConfirmation: 1, takeProfitPct: 0.08, useRegimeFilter: true },
-    { name: "REGIME: 2.5ATR, 1 confirm, 10%TP",             stopLossAtrMultiple: 2.5, entryConfirmation: 1, takeProfitPct: 0.10, useRegimeFilter: true },
-    { name: "REGIME: 2.0ATR, 0 confirm, 5%TP (scalp)",      stopLossAtrMultiple: 2.0, entryConfirmation: 0, takeProfitPct: 0.05, useRegimeFilter: true },
-    { name: "REGIME: 3.0ATR, 1 confirm, 15%TP (swing)",     stopLossAtrMultiple: 3.0, entryConfirmation: 1, takeProfitPct: 0.15, useRegimeFilter: true },
-    { name: "REGIME: 2.5ATR, 2 confirm, 10%TP (selective)", stopLossAtrMultiple: 2.5, entryConfirmation: 2, takeProfitPct: 0.10, useRegimeFilter: true },
+    // Baseline: no new filters
+    { name: "BASELINE: 1.5ATR, 1conf, 10%TP",                stopLossAtrMultiple: 1.5, entryConfirmation: 1, takeProfitPct: 0.10, useRegimeFilter: false, useStockTrendFilter: false, useMultiTfScoring: false },
+    // Stock trend filter only (only buy stocks above their 50 SMA)
+    { name: "TREND50: 1.5ATR, 1conf, 10%TP",                 stopLossAtrMultiple: 1.5, entryConfirmation: 1, takeProfitPct: 0.10, useRegimeFilter: false, useStockTrendFilter: true, useMultiTfScoring: false },
+    { name: "TREND50: 2.0ATR, 1conf, 10%TP",                 stopLossAtrMultiple: 2.0, entryConfirmation: 1, takeProfitPct: 0.10, useRegimeFilter: false, useStockTrendFilter: true, useMultiTfScoring: false },
+    { name: "TREND50: 2.0ATR, 0conf, 8%TP",                  stopLossAtrMultiple: 2.0, entryConfirmation: 0, takeProfitPct: 0.08, useRegimeFilter: false, useStockTrendFilter: true, useMultiTfScoring: false },
+    // Multi-timeframe scoring (boost when weekly+daily align)
+    { name: "MULTI-TF: 1.5ATR, 1conf, 10%TP",               stopLossAtrMultiple: 1.5, entryConfirmation: 1, takeProfitPct: 0.10, useRegimeFilter: false, useStockTrendFilter: false, useMultiTfScoring: true },
+    // Combined: trend filter + multi-TF + regime
+    { name: "ALL: trend+multiTF, 1.5ATR, 1conf, 10%TP",      stopLossAtrMultiple: 1.5, entryConfirmation: 1, takeProfitPct: 0.10, useRegimeFilter: true, useStockTrendFilter: true, useMultiTfScoring: true },
+    { name: "ALL: trend+multiTF, 2.0ATR, 1conf, 10%TP",      stopLossAtrMultiple: 2.0, entryConfirmation: 1, takeProfitPct: 0.10, useRegimeFilter: true, useStockTrendFilter: true, useMultiTfScoring: true },
+    { name: "ALL: trend+multiTF, 2.0ATR, 0conf, 8%TP",       stopLossAtrMultiple: 2.0, entryConfirmation: 0, takeProfitPct: 0.08, useRegimeFilter: true, useStockTrendFilter: true, useMultiTfScoring: true },
+    { name: "ALL: trend+multiTF, 1.5ATR, 2conf, 15%TP",      stopLossAtrMultiple: 1.5, entryConfirmation: 2, takeProfitPct: 0.15, useRegimeFilter: true, useStockTrendFilter: true, useMultiTfScoring: true },
   ];
 
   for (const cfg of configs) {

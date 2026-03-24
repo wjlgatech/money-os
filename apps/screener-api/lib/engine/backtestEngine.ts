@@ -16,6 +16,8 @@ export interface BacktestConfig {
   vix: number;                 // fixed VIX for backtesting (or array per day)
   entryConfirmation: number;   // min number of confirming signals to enter
   useRegimeFilter: boolean;    // gate entries by market regime (SPY-based)
+  useStockTrendFilter: boolean;  // only buy if stock is above its own 50 SMA
+  useMultiTfScoring: boolean;    // boost position size when weekly+daily trendlines align
 }
 
 export interface Trade {
@@ -80,6 +82,8 @@ const DEFAULT_CONFIG: BacktestConfig = {
   vix: 20,
   entryConfirmation: 1,       // at least 1 confirming signal
   useRegimeFilter: true,      // enabled by default
+  useStockTrendFilter: false, // off by default (new)
+  useMultiTfScoring: false,   // off by default (new)
 };
 
 // ── Single Ticker Backtest ───────────────────────────────────
@@ -218,6 +222,13 @@ export function backtestTicker(
     const atr = latestATR(lookbackBars.slice(-20));
     if (!atr || atr === 0) continue;
 
+    // ── Stock-level trend filter: only buy if stock is above its 50 SMA ──
+    if (cfg.useStockTrendFilter && lookbackBars.length >= 50) {
+      const last50Closes = lookbackBars.slice(-50).map((b) => b.close);
+      const sma50 = last50Closes.reduce((s, v) => s + v, 0) / 50;
+      if (todayPrice < sma50) continue; // stock in downtrend — skip
+    }
+
     // Run scanner
     const scanResults = scanTicker(
       ticker, "stock", todayPrice, atr, cfg.vix,
@@ -248,7 +259,18 @@ export function backtestTicker(
         regimeMultiplier = regimePositionMultiplier(detectRegime(benchSlice).regime);
       }
     }
-    const positionSize = cfg.initialCapital * cfg.maxPositionPct * regimeMultiplier;
+
+    // Multi-timeframe confluence: boost size when weekly + daily trendlines both show support
+    let confluenceMultiplier = 1.0;
+    if (cfg.useMultiTfScoring) {
+      const weeklySupport = entryResults.some((r) => r.timeframe === "weekly" && r.direction === "support");
+      const dailySupport = entryResults.some((r) => r.timeframe === "daily" && r.direction === "support");
+      if (weeklySupport && dailySupport) {
+        confluenceMultiplier = 1.5; // 50% larger position when both timeframes align
+      }
+    }
+
+    const positionSize = cfg.initialCapital * cfg.maxPositionPct * regimeMultiplier * confluenceMultiplier;
     const shares = Math.floor(positionSize / todayPrice);
     if (shares === 0) continue;
 
