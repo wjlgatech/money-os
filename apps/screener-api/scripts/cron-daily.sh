@@ -5,7 +5,7 @@
 # What it does:
 #   1. Fetch latest bars + VIX from Yahoo Finance
 #   2. Compute trendlines, scanner results, signals
-#   3. Run auto-trader against Alpaca paper trading
+#   3. Run the AI agent cycle (observe → think → propose → execute → monitor)
 #   4. Log everything to daily log file
 #
 # Set up with: scripts/install-cron.sh
@@ -21,16 +21,16 @@ mkdir -p "$LOG_DIR"
 
 cd "$PROJECT_DIR"
 
-echo "=== Money OS Daily Cron — $(date) ===" >> "$LOG_FILE"
+echo "=== Money OS Agent — $(date) ===" >> "$LOG_FILE"
 
 # Step 1: Fetch data + compute signals
 echo "[$(date +%H:%M:%S)] Running pipeline..." >> "$LOG_FILE"
 npx tsx scripts/run-pipeline.ts >> "$LOG_FILE" 2>&1
 
-# Step 2: Run auto-trader (execute via Alpaca paper)
+# Step 2: Run the agent (observe → think → propose → execute → report)
 echo "" >> "$LOG_FILE"
-echo "[$(date +%H:%M:%S)] Running auto-trader..." >> "$LOG_FILE"
-npx tsx scripts/daily-auto-trader.ts --execute --backend=alpaca >> "$LOG_FILE" 2>&1
+echo "[$(date +%H:%M:%S)] Running agent cycle..." >> "$LOG_FILE"
+npx tsx scripts/agent-cycle.ts >> "$LOG_FILE" 2>&1
 
 echo "" >> "$LOG_FILE"
 echo "[$(date +%H:%M:%S)] Done." >> "$LOG_FILE"
