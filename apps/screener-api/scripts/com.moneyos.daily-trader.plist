@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.moneyos.daily-trader</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/jialiang.wu/Documents/Projects/money-os/apps/screener-api/scripts/cron-daily.sh</string>
+    </array>
+
+    <!-- Run Mon-Fri at 5:30 PM PT (17:30) -->
+    <key>StartCalendarInterval</key>
+    <array>
+        <!-- Monday -->
+        <dict>
+            <key>Weekday</key><integer>1</integer>
+            <key>Hour</key><integer>17</integer>
+            <key>Minute</key><integer>30</integer>
+        </dict>
+        <!-- Tuesday -->
+        <dict>
+            <key>Weekday</key><integer>2</integer>
+            <key>Hour</key><integer>17</integer>
+            <key>Minute</key><integer>30</integer>
+        </dict>
+        <!-- Wednesday -->
+        <dict>
+            <key>Weekday</key><integer>3</integer>
+            <key>Hour</key><integer>17</integer>
+            <key>Minute</key><integer>30</integer>
+        </dict>
+        <!-- Thursday -->
+        <dict>
+            <key>Weekday</key><integer>4</integer>
+            <key>Hour</key><integer>17</integer>
+            <key>Minute</key><integer>30</integer>
+        </dict>
+        <!-- Friday -->
+        <dict>
+            <key>Weekday</key><integer>5</integer>
+            <key>Hour</key><integer>17</integer>
+            <key>Minute</key><integer>30</integer>
+        </dict>
+    </array>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/Users/jialiang.wu/Documents/Projects/money-os/apps/screener-api/logs/launchd-stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/jialiang.wu/Documents/Projects/money-os/apps/screener-api/logs/launchd-stderr.log</string>
+
+    <key>RunAtLoad</key>
+    <false/>
+</dict>
+</plist>
