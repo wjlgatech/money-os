@@ -4,6 +4,7 @@ import { apiSuccess, apiError } from "@/lib/errors";
 import { config } from "@/lib/config";
 import { MoneyAgent } from "@/lib/agent/core";
 import { TradeExecutor } from "@/lib/broker/executor";
+import { generateBriefing, explainProposal as aiExplainProposal } from "@/lib/ai/claude";
 
 export async function GET(req: NextRequest) {
   const authErr = validateRequest(req);
@@ -55,16 +56,26 @@ export async function GET(req: NextRequest) {
 
     const pendingCount = report?.pendingApprovals?.length ?? 0;
 
-    // Headline
+    // Headline — real Claude AI generates the briefing
     let headline: string;
-    if (portfolio.positions.length > 0 && pendingCount > 0) {
-      headline = `${greeting}. You have ${portfolio.positions.length} open position${portfolio.positions.length > 1 ? "s" : ""} and ${pendingCount} new opportunit${pendingCount > 1 ? "ies" : "y"} to review.`;
-    } else if (pendingCount > 0) {
-      headline = `${greeting}. I found ${pendingCount} opportunit${pendingCount > 1 ? "ies" : "y"} for you to review.`;
-    } else if (portfolio.positions.length > 0) {
-      headline = `${greeting}. Your ${portfolio.positions.length} position${portfolio.positions.length > 1 ? "s are" : " is"} open. No new opportunities today.`;
-    } else {
-      headline = `${greeting}. Markets are quiet. No actions taken, no new opportunities.`;
+    try {
+      headline = await generateBriefing({
+        positions: positionsWithContext.map((p) => ({ symbol: p.symbol, pnlPct: p.pnlPct, value: p.posValue })),
+        pendingCount,
+        watchCount: report?.watching?.length ?? 0,
+        regime: report?.market?.regime?.regime ?? "unknown",
+        vix: report?.market?.vix ?? 0,
+        recentActions: actionsSummary,
+        totalEquity: portfolioValue,
+        totalPnl: portfolioValue - config.initialCapital,
+      });
+      if (!headline) throw new Error("empty");
+    } catch {
+      // Fallback to template if Claude API fails
+      const greeting = new Date().getHours() < 12 ? "Good morning" : new Date().getHours() < 17 ? "Good afternoon" : "Good evening";
+      headline = portfolio.positions.length > 0
+        ? `${greeting}. ${portfolio.positions.length} positions open${pendingCount > 0 ? `, ${pendingCount} new opportunities to review` : ""}.`
+        : `${greeting}. ${pendingCount > 0 ? `${pendingCount} opportunities to review.` : "Markets are quiet."}`;
     }
 
     // Selection funnel (transparency)
@@ -89,10 +100,32 @@ export async function GET(req: NextRequest) {
         headline: "No market data yet. Run: npx tsx scripts/run-pipeline.ts",
       },
       actions: actionsSummary,
-      pendingApprovals: (report?.pendingApprovals ?? []).map((p) => ({
-        ...p,
-        aiContext: generateProposalContext(p, portfolioValue),
-      })),
+      pendingApprovals: await Promise.all(
+        (report?.pendingApprovals ?? []).map(async (p) => {
+          // Try real Claude AI interpretation, fall back to template
+          let aiContext: string;
+          try {
+            aiContext = await aiExplainProposal({
+              ticker: p.ticker,
+              shares: p.shares,
+              price: p.price,
+              stopLoss: p.stopLoss,
+              takeProfit: p.takeProfit,
+              signals: p.signals,
+              reason: p.reason,
+              portfolioEquity: portfolioValue,
+              existingPositions: portfolio.positions.map((pos) => pos.symbol),
+              regime: report?.market?.regime?.regime ?? "unknown",
+              vix: report?.market?.vix ?? 20,
+              userLevel: "intermediate",
+            });
+            if (!aiContext) throw new Error("empty");
+          } catch {
+            aiContext = generateProposalContext(p, portfolioValue);
+          }
+          return { ...p, aiContext };
+        })
+      ),
       watching: report?.watching ?? [],
       portfolio: {
         equity: portfolio.equity,

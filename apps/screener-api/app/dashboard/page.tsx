@@ -380,26 +380,8 @@ export default function DashboardV2() {
             </div>
           </div>
 
-          {/* Quick Actions — replaces fake chat */}
-          <div style={{ flex: 1, padding: "16px 16px" }}>
-            <div style={sectionTitle}>QUICK ACTIONS</div>
-            <div style={{ color: "#52525b", fontSize: 11, marginTop: 6, marginBottom: 10 }}>
-              Open Claude and say any of these:
-            </div>
-            {[
-              { cmd: "/invest", desc: "GPS — say your goal, get a step-by-step plan" },
-              { cmd: "/screen", desc: "Scan for stocks near support/resistance" },
-              { cmd: "/strategy-lab", desc: "Test a trading idea from YouTube or a blog" },
-              { cmd: "/import-portfolio", desc: "Share a screenshot of your broker holdings" },
-              { cmd: "/signals", desc: "See today's technical signals" },
-              { cmd: "/macro-check", desc: "Market risk assessment" },
-            ].map((a) => (
-              <div key={a.cmd} style={{ padding: "6px 0", borderTop: "1px solid #1e1e2e" }}>
-                <span style={{ color: "#3b82f6", fontFamily: "monospace", fontSize: 12 }}>{a.cmd}</span>
-                <div style={{ color: "#6b7280", fontSize: 11 }}>{a.desc}</div>
-              </div>
-            ))}
-          </div>
+          {/* AI Chat — real Claude, not simulation */}
+          <AIChatPanel briefing={b} />
         </div>
       </div>
     </div>
@@ -453,3 +435,102 @@ const btnStyle: React.CSSProperties = {
   background: "#1e1e2e", border: "1px solid #2e2e3e", color: "#a1a1aa",
   padding: "5px 12px", borderRadius: 5, cursor: "pointer", fontSize: 11,
 };
+
+// ── AI Chat Panel (real Claude, not simulation) ──────────────
+
+function AIChatPanel({ briefing }: { briefing: Briefing | null }) {
+  const [messages, setMessages] = useState<Array<{ role: "user" | "ai"; text: string }>>([]);
+  const [input, setInput] = useState("");
+  const [thinking, setThinking] = useState(false);
+
+  const send = async (text?: string) => {
+    const question = text ?? input.trim();
+    if (!question) return;
+    setInput("");
+    setMessages((prev) => [...prev, { role: "user", text: question }]);
+    setThinking(true);
+
+    try {
+      const res = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { ...authHeaders, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question,
+          context: {
+            portfolioEquity: briefing?.portfolio?.portfolioValue ?? 0,
+            positions: briefing?.portfolio?.positions?.map((p) => ({ symbol: p.symbol, pnlPct: p.pnlPct })) ?? [],
+            pendingApprovals: briefing?.pendingApprovals?.map((p) => ({ ticker: p.ticker, reason: p.reason })) ?? [],
+            regime: briefing?.market?.regime?.regime ?? "unknown",
+            vix: briefing?.market?.vix ?? 0,
+            userLevel: "intermediate",
+          },
+        }),
+      });
+      const data = await res.json();
+      setMessages((prev) => [...prev, { role: "ai", text: data.answer ?? data.error ?? "No response" }]);
+    } catch {
+      setMessages((prev) => [...prev, { role: "ai", text: "Failed to reach AI. Check that the server is running." }]);
+    }
+    setThinking(false);
+  };
+
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+      <div style={{ padding: "12px 16px", borderBottom: "1px solid #1e1e2e" }}>
+        <div style={sectionTitle}>ASK AI</div>
+        <div style={{ color: "#52525b", fontSize: 10, marginTop: 4 }}>Powered by Claude — real reasoning about YOUR portfolio</div>
+      </div>
+
+      <div style={{ flex: 1, overflowY: "auto", padding: "8px 12px", minHeight: 120 }}>
+        {messages.length === 0 && (
+          <div style={{ color: "#3f3f46", fontSize: 11, textAlign: "center", marginTop: 16, lineHeight: 1.6 }}>
+            Ask anything about your portfolio, the market, or a specific stock.
+          </div>
+        )}
+        {messages.map((m, i) => (
+          <div key={i} style={{
+            padding: "8px 12px", marginTop: 6, borderRadius: 8, fontSize: 12, lineHeight: 1.6,
+            background: m.role === "user" ? "#1e3a5f" : "#111119",
+            color: m.role === "user" ? "#93c5fd" : "#d4d4d8",
+            marginLeft: m.role === "user" ? 30 : 0,
+            marginRight: m.role === "ai" ? 10 : 0,
+          }}>
+            {m.text}
+          </div>
+        ))}
+        {thinking && (
+          <div style={{ padding: "8px 12px", marginTop: 6, color: "#6b7280", fontSize: 11, fontStyle: "italic" }}>
+            Claude is thinking...
+          </div>
+        )}
+      </div>
+
+      {/* Quick questions */}
+      <div style={{ display: "flex", gap: 4, padding: "4px 12px", flexWrap: "wrap" }}>
+        {["Why these stocks?", "What's my risk?", "Should I approve?", "Market outlook"].map((q) => (
+          <button key={q} onClick={() => send(q)} style={{
+            background: "none", border: "1px solid #2e2e3e", color: "#6b7280",
+            padding: "4px 8px", borderRadius: 4, cursor: "pointer", fontSize: 10,
+          }}>{q}</button>
+        ))}
+      </div>
+
+      {/* Input */}
+      <div style={{ display: "flex", gap: 6, padding: "8px 12px" }}>
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && send()}
+          placeholder="Ask anything..."
+          style={{
+            flex: 1, background: "#111119", border: "1px solid #2e2e3e", color: "#e2e8f0",
+            padding: "8px 12px", borderRadius: 6, fontSize: 12, outline: "none",
+          }}
+        />
+        <button onClick={() => send()} disabled={thinking} style={{ ...btnStyle, background: "#3b82f6", color: "#fff" }}>
+          {thinking ? "..." : "Ask"}
+        </button>
+      </div>
+    </div>
+  );
+}
