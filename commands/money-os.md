@@ -36,6 +36,11 @@ Triggers: I want to invest, I have money to invest, I have $X, make me money, gr
 → **Route to: investment-navigator** (via /invest command)
 → This is the GPS. The user states a destination, the navigator drives.
 
+### Strategy Testing / "I Saw a Trading Strategy"
+Triggers: I saw a strategy, test this idea, I want to try, compare strategies, which strategy is better, backtest this, this YouTuber said, I read about, what if I buy when, trading strategy, test a thesis, try this approach, is this strategy good
+→ **Route to: strategy-lab** (via /strategy-lab command)
+→ The user has an idea. Help them formalize it, test it, and know whether it works — before risking money.
+
 ### Emotional / Overwhelm Signals
 Triggers: scared, anxious, overwhelmed, hopeless, drowning, stressed, can't save, what's the point, behind, too late, give up, depressed about money
 → **Route to: financial-courage**
