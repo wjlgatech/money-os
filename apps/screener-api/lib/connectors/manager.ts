@@ -5,6 +5,7 @@
  * Provides a unified view of the user's entire financial picture.
  */
 
+import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from "crypto";
 import type {
   BrokerConnector, ConnectorCredentials, Position, Balance,
   ConnectionStatus, SyncResult,
@@ -16,6 +17,33 @@ import { PlaidConnector } from "./plaid";
 import { readFile, writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
+
+// ── Credential Encryption ────────────────────────────────────
+
+const ENCRYPTION_KEY = process.env.CONNECTOR_ENCRYPTION_KEY ?? "moneyos-default-local-key-change-me";
+const ALGO = "aes-256-gcm";
+
+function deriveKey(password: string): Buffer {
+  return scryptSync(password, "moneyos-salt", 32);
+}
+
+function encrypt(text: string): string {
+  const key = deriveKey(ENCRYPTION_KEY);
+  const iv = randomBytes(16);
+  const cipher = createCipheriv(ALGO, key, iv);
+  const encrypted = Buffer.concat([cipher.update(text, "utf8"), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return `${iv.toString("hex")}:${tag.toString("hex")}:${encrypted.toString("hex")}`;
+}
+
+function decrypt(data: string): string {
+  const [ivHex, tagHex, encHex] = data.split(":");
+  if (!ivHex || !tagHex || !encHex) throw new Error("Invalid encrypted data format");
+  const key = deriveKey(ENCRYPTION_KEY);
+  const decipher = createDecipheriv(ALGO, key, Buffer.from(ivHex, "hex"));
+  decipher.setAuthTag(Buffer.from(tagHex, "hex"));
+  return Buffer.concat([decipher.update(Buffer.from(encHex, "hex")), decipher.final()]).toString("utf8");
+}
 
 const CONNECTORS_STATE_PATH = path.join(process.cwd(), "data", "connectors-state.json");
 
@@ -244,14 +272,28 @@ export class ConnectorManager {
 
   private async loadState(): Promise<void> {
     try {
-      const json = await readFile(CONNECTORS_STATE_PATH, "utf8");
-      this.state = JSON.parse(json);
+      const raw = await readFile(CONNECTORS_STATE_PATH, "utf8");
+      const stored = JSON.parse(raw);
+      // Decrypt credentials
+      const decryptedCreds: Record<string, ConnectorCredentials> = {};
+      for (const [id, encStr] of Object.entries(stored.credentials ?? {})) {
+        try {
+          decryptedCreds[id] = JSON.parse(decrypt(encStr as string));
+        } catch { /* corrupted credential, skip */ }
+      }
+      this.state = { ...stored, credentials: decryptedCreds };
     } catch { /* no saved state */ }
   }
 
   private async saveState(): Promise<void> {
     const dir = path.dirname(CONNECTORS_STATE_PATH);
     if (!existsSync(dir)) await mkdir(dir, { recursive: true });
-    await writeFile(CONNECTORS_STATE_PATH, JSON.stringify(this.state, null, 2));
+    // Encrypt credentials before writing
+    const encryptedCreds: Record<string, string> = {};
+    for (const [id, creds] of Object.entries(this.state.credentials)) {
+      encryptedCreds[id] = encrypt(JSON.stringify(creds));
+    }
+    const toSave = { ...this.state, credentials: encryptedCreds };
+    await writeFile(CONNECTORS_STATE_PATH, JSON.stringify(toSave, null, 2));
   }
 }

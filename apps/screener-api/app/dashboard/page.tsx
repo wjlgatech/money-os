@@ -63,16 +63,29 @@ function Expandable({ title, children }: { title: string; children: React.ReactN
 export default function DashboardV2() {
   const [briefing, setBriefing] = useState<Briefing | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [approving, setApproving] = useState<string | null>(null);
-  const [chatInput, setChatInput] = useState("");
-  const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "agent"; text: string }>>([]);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 4000); };
 
   const refresh = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const data = await apiFetch("/api/briefing");
-      if (!data.error) setBriefing(data);
-    } catch {}
+      const res = await fetch("/api/briefing", { headers: authHeaders });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        setError(errData.error ?? `API error ${res.status}. Check SCREENER_API_TOKEN in .env.local`);
+        setLoading(false);
+        return;
+      }
+      const data = await res.json();
+      if (data.error) { setError(data.error); }
+      else { setBriefing(data); }
+    } catch (err) {
+      setError(`Cannot reach API: ${(err as Error).message}. Is the server running?`);
+    }
     setLoading(false);
   }, []);
 
@@ -80,56 +93,70 @@ export default function DashboardV2() {
 
   const handleApprove = async (proposal: Briefing["pendingApprovals"][0]) => {
     setApproving(proposal.id);
-    await apiPost("/api/agent", { action: "approve", proposal });
-    await refresh();
-    setApproving(null);
+    try {
+      await apiPost("/api/agent", { action: "approve", proposal });
+      showToast(`${proposal.ticker} order submitted`);
+      await refresh();
+    } catch { showToast(`Failed to approve ${proposal.ticker}`); }
+    finally { setApproving(null); }
   };
 
   const handleSkip = async (id: string) => {
-    // Just remove from UI — agent will expire it
-    if (briefing) {
-      setBriefing({ ...briefing, pendingApprovals: briefing.pendingApprovals.filter((p) => p.id !== id) });
-    }
-  };
-
-  const handleChat = () => {
-    if (!chatInput.trim()) return;
-    const msg = chatInput.trim();
-    setChatMessages((prev) => [...prev, { role: "user", text: msg }]);
-    setChatInput("");
-
-    // Simulate agent response based on keywords
-    setTimeout(() => {
-      let response: string;
-      if (msg.toLowerCase().includes("why") && briefing?.pendingApprovals[0]) {
-        const p = briefing.pendingApprovals[0];
-        response = `${p.ticker} is at ${p.reason}. ${p.aiContext} The thesis: support levels that have held multiple times tend to hold again. But it's not guaranteed — that's why we have a stop-loss at $${p.stopLoss}.`;
-      } else if (msg.toLowerCase().includes("risk")) {
-        response = `Your total portfolio risk is ${briefing?.portfolio?.totalPnlPct?.toFixed(2) ?? 0}%. Max position size is 3% ($${((briefing?.portfolio?.equity ?? 100000) * 0.03).toFixed(0)}). Every trade has a stop-loss — worst case per trade is ~$150-200.`;
-      } else if (msg.toLowerCase().includes("regime") || msg.toLowerCase().includes("market")) {
-        response = briefing?.market?.headline ?? "Run the pipeline first to get market data.";
-      } else if (msg.toLowerCase().includes("performance") || msg.toLowerCase().includes("how am i")) {
-        const perf = briefing?.performance;
-        response = perf ? `${perf.totalTrades} trades total, ${perf.winRate.toFixed(1)}% win rate. ${perf.insight}` : "No trades yet.";
-      } else {
-        response = `I understand you're asking about "${msg}". For deep analysis, use the Claude plugin directly — say this exact question to Claude with /money-os. The dashboard handles approvals and monitoring; Claude handles strategy and coaching.`;
-      }
-      setChatMessages((prev) => [...prev, { role: "agent", text: response }]);
-    }, 500);
+    try {
+      await apiPost("/api/agent", { action: "skip", proposalId: id });
+      showToast("Proposal skipped");
+      await refresh();
+    } catch { showToast("Failed to skip"); }
   };
 
   if (loading && !briefing) {
-    return <div style={pageStyle}><div style={{ padding: 40, textAlign: "center", color: "#6b7280" }}>Loading agent briefing...</div></div>;
+    return (
+      <div style={pageStyle}>
+        <div style={{ padding: 40, textAlign: "center" }}>
+          <div style={{ color: "#a1a1aa", fontSize: 15, marginBottom: 8 }}>Loading Money OS...</div>
+          <div style={{ color: "#52525b", fontSize: 12 }}>Connecting to agent and market data</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !briefing) {
+    return (
+      <div style={pageStyle}>
+        <div style={{ padding: 40, textAlign: "center" }}>
+          <div style={{ color: "#ef4444", fontSize: 15, marginBottom: 12 }}>Connection Error</div>
+          <div style={{ color: "#a1a1aa", fontSize: 12, marginBottom: 16, maxWidth: 500, margin: "0 auto" }}>{error}</div>
+          <button onClick={refresh} style={{ ...btnStyle, background: "#3b82f6", color: "#fff", padding: "8px 20px" }}>Retry</button>
+        </div>
+      </div>
+    );
   }
 
   const b = briefing;
   const displayEquity = b?.portfolio?.portfolioValue ?? b?.portfolio?.equity ?? 0;
   const pnlColor = (b?.portfolio?.totalPnl ?? 0) >= 0 ? "#4ade80" : "#ef4444";
   const vixVal = b?.market?.vix ?? 0;
-  const vixColor = vixVal < 15 ? "#4ade80" : vixVal < 20 ? "#a3e635" : vixVal < 25 ? "#facc15" : vixVal < 30 ? "#fb923c" : "#ef4444";
+  const vixColor = vixVal === 0 ? "#52525b" : vixVal < 15 ? "#4ade80" : vixVal < 20 ? "#a3e635" : vixVal < 25 ? "#facc15" : vixVal < 30 ? "#fb923c" : "#ef4444";
+  const vixLabel = vixVal === 0 ? "N/A" : vixVal < 15 ? "Calm" : vixVal < 20 ? "Normal" : vixVal < 25 ? "Nervous" : vixVal < 30 ? "Fearful" : "Panic";
+
+  // Onboarding: show getting started if no agent data
+  const isNewUser = !b?.agentActive && (b?.portfolio?.positions?.length ?? 0) === 0;
 
   return (
     <div style={pageStyle}>
+      {/* Toast */}
+      {toast && (
+        <div style={{ position: "fixed", top: 16, right: 16, background: "#1e3a5f", color: "#93c5fd", padding: "10px 20px", borderRadius: 8, fontSize: 13, zIndex: 100, border: "1px solid #3b82f6", boxShadow: "0 4px 12px rgba(0,0,0,0.4)" }}>
+          {toast}
+        </div>
+      )}
+      {/* Error banner */}
+      {error && briefing && (
+        <div style={{ background: "#7f1d1d", color: "#fca5a5", padding: "8px 24px", fontSize: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span>{error}</span>
+          <button onClick={refresh} style={{ ...btnStyle, background: "#991b1b", color: "#fca5a5", fontSize: 10 }}>Retry</button>
+        </div>
+      )}
       {/* ── Header ──────────────────────────────────────── */}
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 24px", borderBottom: "1px solid #1e1e2e", background: "#0c0c14" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -138,7 +165,7 @@ export default function DashboardV2() {
         </div>
         <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
           <HeaderStat label="Portfolio" value={`$${displayEquity.toLocaleString(undefined, { minimumFractionDigits: 0 })}`} sub={`${b?.portfolio?.positions?.length ?? 0} positions`} subColor="#818cf8" />
-          <HeaderStat label="VIX" value={vixVal.toFixed(1)} sub={vixVal < 20 ? "Normal" : vixVal < 25 ? "Nervous" : vixVal < 30 ? "Fearful" : "Panic"} subColor={vixColor} />
+          <HeaderStat label="VIX" value={vixVal === 0 ? "—" : vixVal.toFixed(1)} sub={vixLabel} subColor={vixColor} />
           <HeaderStat label="Regime" value={(b?.market?.regime?.regime ?? "—").toUpperCase()} sub={`${((b?.market?.regime?.confidence ?? 0) * 100).toFixed(0)}%`} subColor="#818cf8" />
           <button onClick={refresh} style={btnStyle}>{loading ? "..." : "Refresh"}</button>
         </div>
@@ -148,10 +175,35 @@ export default function DashboardV2() {
         {/* ── Main Column ─────────────────────────────── */}
         <div style={{ borderRight: "1px solid #1e1e2e", overflowY: "auto" }}>
 
+          {/* Onboarding for new users */}
+          {isNewUser && (
+            <div style={{ padding: "24px", borderBottom: "1px solid #1e1e2e", background: "#0c1020" }}>
+              <div style={{ fontSize: 17, color: "#e2e8f0", fontWeight: 600, marginBottom: 12 }}>Welcome to Money OS</div>
+              <div style={{ color: "#a1a1aa", fontSize: 13, lineHeight: 1.7, marginBottom: 16 }}>
+                Get started in 3 steps:
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {[
+                  { step: "1", title: "Import your portfolio", desc: "In Claude, say /import-portfolio and share a screenshot of your broker. Works with Fidelity, Coinbase, Moomoo, Kraken — any broker.", done: false },
+                  { step: "2", title: "Run your first scan", desc: "Run: npx tsx scripts/run-pipeline.ts (fetches market data + computes signals for 130 tickers)", done: false },
+                  { step: "3", title: "Review and approve", desc: "The agent will propose trades based on your portfolio. Approve, skip, or ask 'why?' for each one.", done: false },
+                ].map((s) => (
+                  <div key={s.step} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: s.done ? "#065f46" : "#1e3a5f", color: s.done ? "#4ade80" : "#93c5fd", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, flexShrink: 0 }}>{s.step}</div>
+                    <div>
+                      <div style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 600 }}>{s.title}</div>
+                      <div style={{ color: "#6b7280", fontSize: 11, lineHeight: 1.5 }}>{s.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Agent Briefing */}
           <div style={{ padding: "20px 24px", borderBottom: "1px solid #1e1e2e" }}>
             <div style={{ fontSize: 15, color: "#e2e8f0", lineHeight: 1.6, marginBottom: 8 }}>
-              {b?.headline ?? "No briefing available. Run the agent cycle first."}
+              {b?.headline ?? "Welcome. Run the agent pipeline to start receiving trade proposals."}
             </div>
             {(b?.actions?.length ?? 0) > 0 && (
               <div style={{ marginTop: 12 }}>
@@ -293,13 +345,13 @@ export default function DashboardV2() {
           </div>
         </div>
 
-        {/* ── Right Column: Chat + Insight ────────────── */}
+        {/* ── Right Column: Insight + Status ──────────── */}
         <div style={{ display: "flex", flexDirection: "column", background: "#0a0a12" }}>
-          {/* Performance */}
+          {/* Agent Insight */}
           <div style={{ padding: "16px 16px", borderBottom: "1px solid #1e1e2e" }}>
             <div style={sectionTitle}>AGENT INSIGHT</div>
             <div style={{ color: "#a1a1aa", fontSize: 12, lineHeight: 1.6, marginTop: 6 }}>
-              {b?.performance?.insight ?? "No insights yet."}
+              {b?.performance?.insight ?? "No insights yet. Run the pipeline to generate data."}
             </div>
             {(b?.performance?.totalTrades ?? 0) > 0 && (
               <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
@@ -310,49 +362,43 @@ export default function DashboardV2() {
             )}
           </div>
 
-          {/* Chat */}
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "0 0 12px 0" }}>
-            <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px" }}>
-              {chatMessages.length === 0 && (
-                <div style={{ color: "#3f3f46", fontSize: 12, textAlign: "center", marginTop: 20 }}>
-                  Ask me anything about your portfolio, strategies, or the market.
-                </div>
-              )}
-              {chatMessages.map((m, i) => (
-                <div key={i} style={{
-                  padding: "8px 12px", marginTop: 8, borderRadius: 8, fontSize: 12, lineHeight: 1.5,
-                  background: m.role === "user" ? "#1e3a5f" : "#111119",
-                  color: m.role === "user" ? "#93c5fd" : "#d4d4d8",
-                  marginLeft: m.role === "user" ? 40 : 0,
-                  marginRight: m.role === "agent" ? 40 : 0,
-                }}>
-                  {m.text}
-                </div>
-              ))}
+          {/* Market Context */}
+          <div style={{ padding: "16px 16px", borderBottom: "1px solid #1e1e2e" }}>
+            <div style={sectionTitle}>MARKET</div>
+            <div style={{ color: "#a1a1aa", fontSize: 12, lineHeight: 1.6, marginTop: 6 }}>
+              {b?.market?.headline ?? "No market data. Run pipeline first."}
             </div>
-            <div style={{ padding: "0 12px" }}>
-              <div style={{ display: "flex", gap: 6 }}>
-                <input
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleChat()}
-                  placeholder="Ask me anything..."
-                  style={{
-                    flex: 1, background: "#111119", border: "1px solid #2e2e3e", color: "#e2e8f0",
-                    padding: "8px 12px", borderRadius: 6, fontSize: 12, outline: "none",
-                  }}
-                />
-                <button onClick={handleChat} style={{ ...btnStyle, background: "#3b82f6", color: "#fff" }}>Send</button>
-              </div>
-              <div style={{ display: "flex", gap: 4, marginTop: 6, flexWrap: "wrap" }}>
-                {["Why this stock?", "What's my risk?", "Market outlook", "How am I doing?"].map((q) => (
-                  <button key={q} onClick={() => { setChatInput(q); }} style={{
-                    background: "none", border: "1px solid #2e2e3e", color: "#6b7280",
-                    padding: "3px 8px", borderRadius: 4, cursor: "pointer", fontSize: 10,
-                  }}>{q}</button>
-                ))}
-              </div>
+          </div>
+
+          {/* Data Freshness */}
+          <div style={{ padding: "12px 16px", borderBottom: "1px solid #1e1e2e" }}>
+            <div style={sectionTitle}>STATUS</div>
+            <div style={{ fontSize: 11, color: "#6b7280", marginTop: 6, lineHeight: 1.8 }}>
+              <div>Last cycle: <span style={{ color: "#a1a1aa" }}>{b?.lastCycle ? new Date(b.lastCycle).toLocaleString() : "Never"}</span></div>
+              <div>Agent: <span style={{ color: b?.agentActive ? "#4ade80" : "#6b7280" }}>{b?.agentActive ? "Active" : "Not started"}</span></div>
+              <div>Backend: <span style={{ color: "#818cf8" }}>{b?.portfolio ? "Alpaca Paper" : "—"}</span></div>
             </div>
+          </div>
+
+          {/* Quick Actions — replaces fake chat */}
+          <div style={{ flex: 1, padding: "16px 16px" }}>
+            <div style={sectionTitle}>QUICK ACTIONS</div>
+            <div style={{ color: "#52525b", fontSize: 11, marginTop: 6, marginBottom: 10 }}>
+              Open Claude and say any of these:
+            </div>
+            {[
+              { cmd: "/invest", desc: "GPS — say your goal, get a step-by-step plan" },
+              { cmd: "/screen", desc: "Scan for stocks near support/resistance" },
+              { cmd: "/strategy-lab", desc: "Test a trading idea from YouTube or a blog" },
+              { cmd: "/import-portfolio", desc: "Share a screenshot of your broker holdings" },
+              { cmd: "/signals", desc: "See today's technical signals" },
+              { cmd: "/macro-check", desc: "Market risk assessment" },
+            ].map((a) => (
+              <div key={a.cmd} style={{ padding: "6px 0", borderTop: "1px solid #1e1e2e" }}>
+                <span style={{ color: "#3b82f6", fontFamily: "monospace", fontSize: 12 }}>{a.cmd}</span>
+                <div style={{ color: "#6b7280", fontSize: 11 }}>{a.desc}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

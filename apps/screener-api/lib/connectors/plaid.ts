@@ -23,7 +23,14 @@ import type {
   HealthStatus, Position, Balance, SyncResult,
 } from "./interface";
 
-const PLAID_BASE = "https://sandbox.plaid.com"; // change to production.plaid.com for live
+import { config } from "../config";
+
+const PLAID_URLS: Record<string, string> = {
+  sandbox: "https://sandbox.plaid.com",
+  development: "https://development.plaid.com",
+  production: "https://production.plaid.com",
+};
+const PLAID_BASE = PLAID_URLS[config.plaidEnv] ?? PLAID_URLS.sandbox;
 
 export class PlaidConnector implements BrokerConnector {
   id = "plaid";

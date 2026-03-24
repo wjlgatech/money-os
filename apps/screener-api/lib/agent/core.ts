@@ -9,6 +9,7 @@
  *   AgentReport is consumed by: morning briefing, evening report, push notifications
  */
 
+import { config } from "../config";
 import { TradeExecutor, type ExecutionResult } from "../broker/executor";
 import { TradeGate } from "../engine/tradeGate";
 import { detectRegime, type RegimeResult } from "../indicators/regime";
@@ -379,8 +380,8 @@ export class MoneyAgent {
         positionCount: portfolio.positions.length,
         dayPnl: 0,  // would need yesterday's equity to compute
         dayPnlPct: 0,
-        totalPnl: portfolio.equity - 100_000, // assuming 100K start
-        totalPnlPct: ((portfolio.equity - 100_000) / 100_000) * 100,
+        totalPnl: portfolio.equity - config.initialCapital,
+        totalPnlPct: ((portfolio.equity - config.initialCapital) / config.initialCapital) * 100,
       },
       actionsTaken: actions,
       pendingApprovals,
@@ -430,8 +431,33 @@ export class MoneyAgent {
       automatic: false,
     });
 
+    // Remove from pending in the last report
+    this.removeFromPending(approval.id);
     await this.save();
     return result;
+  }
+
+  skipProposal(proposalId: string): boolean {
+    const removed = this.removeFromPending(proposalId);
+    if (removed) {
+      this.state.tradeLog.push({
+        type: "skip",
+        ticker: removed.ticker,
+        detail: `Skipped by user: ${removed.reason}`,
+        automatic: false,
+      });
+    }
+    // Save is async but we don't need to await in the caller
+    this.save();
+    return !!removed;
+  }
+
+  private removeFromPending(proposalId: string): PendingApproval | null {
+    const lastReport = this.state.reports[this.state.reports.length - 1];
+    if (!lastReport) return null;
+    const idx = lastReport.pendingApprovals.findIndex((p) => p.id === proposalId);
+    if (idx === -1) return null;
+    return lastReport.pendingApprovals.splice(idx, 1)[0];
   }
 
   // ── Rules Management ─────────────────────────────────────

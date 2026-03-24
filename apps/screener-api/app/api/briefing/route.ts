@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     const portfolioValue = Math.max(
       portfolio.equity,
       portfolio.positions.reduce((s, p) => s + p.currentPrice * p.qty, 0),
-      100_000 // fallback to initial capital
+      config.initialCapital
     );
 
     // Positions with AI context
@@ -98,8 +98,8 @@ export async function GET(req: NextRequest) {
         equity: portfolio.equity,
         portfolioValue, // the sane value used for sizing
         cash: portfolio.cash,
-        totalPnl: portfolio.equity - 100_000,
-        totalPnlPct: ((portfolio.equity - 100_000) / 100_000) * 100,
+        totalPnl: portfolio.equity - config.initialCapital,
+        totalPnlPct: ((portfolio.equity - config.initialCapital) / config.initialCapital) * 100,
         positions: positionsWithContext,
       },
       performance: report?.performance ?? { winRate: 0, totalTrades: 0, insight: "No trades yet." },

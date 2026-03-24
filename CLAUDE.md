@@ -65,6 +65,12 @@ npx tsx scripts/daily-auto-trader.ts --execute  # Execute paper trades
 - **Backtest before live**: All trading strategies must prove profitable in backtesting before paper trading, and in paper trading before live execution.
 - **Human gate**: Machine proposes trades, human approves. Configurable auto-approve rules in `tradeGate.ts`.
 
-## Current State (v4.0)
+## Current State (v4.2)
 
-20 skills, 21 commands, screener data service with real market data (110 tickers), backtest engine, paper trading portfolio ($100K virtual), trade gate with approval workflow. Backtest shows the system needs a market regime filter before live trading — it loses money buying support bounces in bear markets.
+22 skills, 23 commands, screener data service with real market data (130 tickers), backtest engine with regime filter + stock trend filter, paper trading on Alpaca, autonomous agent with constitutional AI, Strategy Lab, ADEPT coaching, and web dashboard at `/dashboard`.
+
+Broker connectors: Alpaca (connected), Coinbase, Kraken, Moomoo, Plaid (built, need API keys). Credentials encrypted at rest with AES-256-GCM. Portfolio import via screenshot (Claude vision OCR).
+
+Backtest: best config is Trend50 + 2ATR + 8%TP — 42.5% win rate, +2.70% return, Sharpe 1.53. Doesn't beat SPY buy-and-hold yet. Strategy Lab allows testing any idea from YouTube/blogs against real data.
+
+gstack audits completed: staff review (15 findings, 10 fixed), CSO security (10 findings, 9 fixed), design review (4.7/10, major UX fixes applied), QA (52/100 → fixes applied for criticals + highs).

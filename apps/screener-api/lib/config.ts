@@ -36,6 +36,14 @@ export const config = {
   // Financial Modeling Prep (fundamentals + earnings)
   fmpApiKey: process.env.FMP_API_KEY ?? "",
 
+  // Plaid (Fidelity, Schwab, Vanguard connector)
+  plaidEnv: (process.env.PLAID_ENV ?? "sandbox") as "sandbox" | "development" | "production",
+  plaidClientId: process.env.PLAID_CLIENT_ID ?? "",
+  plaidSecret: process.env.PLAID_SECRET ?? "",
+
+  // Portfolio
+  initialCapital: Number(process.env.INITIAL_CAPITAL ?? "100000"),
+
   // Auth
   screenerApiToken: process.env.SCREENER_API_TOKEN ?? "",
 

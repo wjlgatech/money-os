@@ -28,7 +28,13 @@ export async function POST(req: NextRequest) {
     if (action === "approve") {
       const { proposal } = body;
       const result = await agent.approveProposal(proposal);
-      return apiSuccess({ result });
+      return apiSuccess({ result, message: `${proposal.ticker} order submitted` });
+    }
+
+    if (action === "skip") {
+      const { proposalId } = body;
+      const skipped = agent.skipProposal(proposalId);
+      return apiSuccess({ skipped, message: skipped ? "Proposal skipped" : "Proposal not found" });
     }
 
     if (action === "update_rules") {
