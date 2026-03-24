@@ -30,6 +30,9 @@ export const config = {
   alpacaTradingSecret: process.env.ALPACA_TRADING_SECRET ?? "",
   alpacaPaperMode: process.env.ALPACA_PAPER_MODE !== "false", // default: paper
 
+  // Financial Modeling Prep (fundamentals + earnings)
+  fmpApiKey: process.env.FMP_API_KEY ?? "",
+
   // Auth
   screenerApiToken: process.env.SCREENER_API_TOKEN ?? "",
 
