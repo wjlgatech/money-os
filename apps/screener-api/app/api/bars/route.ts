@@ -3,6 +3,7 @@ import { validateRequest } from "@/lib/auth";
 import { apiSuccess, apiError } from "@/lib/errors";
 import { config } from "@/lib/config";
 import { getMockBars } from "@/lib/mock/bars";
+import { fetchYahooBars } from "@/lib/fetchers/yahoo";
 
 export async function GET(req: NextRequest) {
   const authErr = validateRequest(req);
@@ -18,24 +19,55 @@ export async function GET(req: NextRequest) {
     return apiError("timeframe must be daily or weekly", 400);
   }
 
+  const yahooInterval = timeframe === "weekly" ? "1wk" : "1d";
+  const yahooRange = limit <= 90 ? "6mo" : limit <= 180 ? "1y" : "2y";
+
+  // ── No DB configured: Yahoo Finance directly ──────────────
   if (!config.hasDatabaseUrl) {
-    const bars = getMockBars(ticker, timeframe as "daily" | "weekly", limit);
-    return apiSuccess({ ticker, timeframe, bars, total: bars.length });
+    try {
+      const bars = await fetchYahooBars(ticker.toUpperCase(), yahooInterval, yahooRange);
+      return apiSuccess({ ticker, timeframe, bars: bars.slice(-limit), total: bars.length, source: "yahoo" });
+    } catch {
+      // Last resort: deterministic mock
+      const bars = getMockBars(ticker, timeframe as "daily" | "weekly", limit);
+      return apiSuccess({ ticker, timeframe, bars, total: bars.length, source: "mock" });
+    }
   }
 
-  // DB path
-  const { db } = await import("@/lib/db");
-  const { bars } = await import("@/lib/db/schema");
-  const { eq, and, desc } = await import("drizzle-orm");
+  // ── DB configured: try DB first, fall back to Yahoo ───────
+  try {
+    const { db } = await import("@/lib/db");
+    const { bars } = await import("@/lib/db/schema");
+    const { eq, and, desc } = await import("drizzle-orm");
 
-  if (!db) return apiError("Database not available", 503);
+    if (!db) throw new Error("db unavailable");
 
-  const results = await db
-    .select()
-    .from(bars)
-    .where(and(eq(bars.ticker, ticker.toUpperCase()), eq(bars.timeframe, timeframe)))
-    .orderBy(desc(bars.ts))
-    .limit(limit);
+    const query = db.select().from(bars)
+      .where(and(eq(bars.ticker, ticker.toUpperCase()), eq(bars.timeframe, timeframe)))
+      .orderBy(desc(bars.ts))
+      .limit(limit);
 
-  return apiSuccess({ ticker, timeframe, bars: results, total: results.length });
+    const results = await Promise.race([
+      query,
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("DB timeout")), 5000)
+      ),
+    ]);
+
+    if (results.length > 0) {
+      return apiSuccess({ ticker, timeframe, bars: results, total: results.length, source: "db" });
+    }
+    // DB has no data for this ticker — fall through to Yahoo
+  } catch {
+    // DB timeout or error — fall through to Yahoo
+  }
+
+  // ── Yahoo Finance fallback ─────────────────────────────────
+  try {
+    const bars = await fetchYahooBars(ticker.toUpperCase(), yahooInterval, yahooRange);
+    return apiSuccess({ ticker, timeframe, bars: bars.slice(-limit), total: bars.length, source: "yahoo" });
+  } catch {
+    const bars = getMockBars(ticker, timeframe as "daily" | "weekly", limit);
+    return apiSuccess({ ticker, timeframe, bars, total: bars.length, source: "mock" });
+  }
 }

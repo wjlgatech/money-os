@@ -719,10 +719,23 @@ function TickerDrawer({ ticker, onClose }: { ticker: string; onClose: () => void
     setInsightLoaded(false);
 
     Promise.allSettled([
-      apiFetch(`/api/bars?ticker=${ticker}&timeframe=1day&limit=120`),
+      apiFetch(`/api/bars?ticker=${ticker}&timeframe=daily&limit=120`),
       apiFetch(`/api/trendlines?ticker=${ticker}`),
     ]).then(([barsRes, tlRes]) => {
-      if (barsRes.status === "fulfilled") setBars(barsRes.value.bars ?? []);
+      if (barsRes.status === "fulfilled") {
+        // Normalize: DB returns ts as timestamp, close as numeric string
+        const raw = barsRes.value.bars ?? [];
+        const normalized = raw
+          .map((b: any) => ({
+            date: typeof b.ts === "string" ? b.ts.slice(0, 10) : String(b.ts ?? ""),
+            close: Number(b.close),
+            high: Number(b.high ?? b.close),
+            low: Number(b.low ?? b.close),
+          }))
+          .filter((b: any) => b.close > 0)
+          .reverse(); // API returns desc, chart needs asc
+        setBars(normalized);
+      }
       if (tlRes.status === "fulfilled") setTrendlines(tlRes.value.trendlines ?? []);
       setLoadingChart(false);
     });
