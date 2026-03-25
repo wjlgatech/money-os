@@ -27,7 +27,8 @@ async function ask(
     const response = await client.messages.create({
       model: MODEL,
       max_tokens: maxTokens,
-      system,
+      // Append to every system prompt — no exceptions
+      system: system + " IMPORTANT: Plain prose only. No markdown (no ##, **, --, ---, *, >, or bullet lists). No headers. No bold. Write as you'd speak it.",
       messages: [{ role: "user", content: prompt }],
     });
     const block = response.content[0];

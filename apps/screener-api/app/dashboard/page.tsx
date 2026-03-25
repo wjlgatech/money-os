@@ -71,6 +71,7 @@ export default function DashboardV2() {
   const [searchInsight, setSearchInsight] = useState<any>(null);
   const [searching, setSearching] = useState(false);
   const [quickAdd, setQuickAdd] = useState("");
+  const [drawerTicker, setDrawerTicker] = useState<string | null>(null);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 4000); };
 
@@ -232,9 +233,11 @@ export default function DashboardV2() {
           {/* ── Header row ── */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 18, fontWeight: 700, color: "#e2e8f0" }}>
-                {searchResult?.search ?? searchInsight?.raw?.ticker}
-              </span>
+              <button onClick={() => setDrawerTicker(searchResult?.search ?? searchInsight?.raw?.ticker)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+                <span style={{ fontSize: 18, fontWeight: 700, color: "#818cf8", textDecoration: "underline dotted" }}>
+                  {searchResult?.search ?? searchInsight?.raw?.ticker}
+                </span>
+              </button>
               {searchInsight?.raw?.companyName && (
                 <span style={{ color: "#a1a1aa", fontSize: 13 }}>{searchInsight.raw.companyName}</span>
               )}
@@ -401,7 +404,9 @@ export default function DashboardV2() {
                 <div key={p.id} style={{ background: "#111119", borderRadius: 8, padding: 16, marginTop: 12, border: "1px solid #1e1e2e" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                     <div>
-                      <span style={{ fontSize: 16, fontWeight: 700, color: "#e2e8f0" }}>{p.ticker}</span>
+                      <button onClick={() => setDrawerTicker(p.ticker)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+                        <span style={{ fontSize: 16, fontWeight: 700, color: "#818cf8", textDecoration: "underline dotted" }}>{p.ticker}</span>
+                      </button>
                       <span style={{ color: "#6b7280", marginLeft: 8, fontSize: 12 }}>BUY {p.shares} shares @ ${p.price.toFixed(2)}</span>
                       <ConfBadge confidence={p.confidence} />
                     </div>
@@ -459,7 +464,9 @@ export default function DashboardV2() {
               {b!.watching.map((w, i) => (
                 <div key={i} style={{ display: "flex", gap: 8, padding: "8px 0", alignItems: "center", borderTop: i > 0 ? "1px solid #1e1e2e" : "none" }}>
                   <span style={{ color: "#facc15" }}>👀</span>
-                  <span style={{ color: "#e2e8f0", fontWeight: 600, width: 55 }}>{w.ticker}</span>
+                  <button onClick={() => setDrawerTicker(w.ticker)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, width: 55, textAlign: "left" }}>
+                    <span style={{ color: "#818cf8", fontWeight: 600, textDecoration: "underline dotted" }}>{w.ticker}</span>
+                  </button>
                   <span style={{ color: "#a1a1aa", fontSize: 12, flex: 1 }}>{w.reason}</span>
                   <span style={{ color: "#6b7280", fontSize: 11 }}>~{w.estimatedDays}d</span>
                 </div>
@@ -473,7 +480,9 @@ export default function DashboardV2() {
             {(b?.portfolio?.positions?.length ?? 0) > 0 ? b!.portfolio.positions.map((p) => (
               <div key={p.symbol} style={{ display: "flex", gap: 12, padding: "10px 0", borderTop: "1px solid #1e1e2e", alignItems: "center" }}>
                 <div style={{ width: 55 }}>
-                  <div style={{ color: "#e2e8f0", fontWeight: 700 }}>{p.symbol}</div>
+                  <button onClick={() => setDrawerTicker(p.symbol)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left" }}>
+                    <div style={{ color: "#818cf8", fontWeight: 700, textDecoration: "underline dotted" }}>{p.symbol}</div>
+                  </button>
                   <div style={{ color: "#6b7280", fontSize: 10 }}>{p.qty} shares</div>
                 </div>
                 <div style={{ flex: 1 }}>
@@ -548,6 +557,9 @@ export default function DashboardV2() {
           <AIChatPanel briefing={b} />
         </div>
       </div>
+
+      {/* Ticker Detail Drawer */}
+      {drawerTicker && <TickerDrawer ticker={drawerTicker} onClose={() => setDrawerTicker(null)} />}
     </div>
   );
 }
@@ -681,6 +693,332 @@ function ImportPanel({ connections, showToast, onRefresh }: {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Ticker Detail Drawer ──────────────────────────────────────
+// Slides in from the right. Three tabs: Chart | Fundamentals | AI Analysis.
+// Triggered by clicking any underlined ticker symbol anywhere on the dashboard.
+
+function TickerDrawer({ ticker, onClose }: { ticker: string; onClose: () => void }) {
+  const [tab, setTab] = useState<"chart" | "fundamentals" | "ai">("chart");
+  const [bars, setBars] = useState<Array<{ date: string; close: number; high: number; low: number }>>([]);
+  const [trendlines, setTrendlines] = useState<Array<{ slope: number; intercept: number; direction: string; timeframe: string; lineType: string }>>([]);
+  const [insight, setInsight] = useState<any>(null);
+  const [loadingChart, setLoadingChart] = useState(true);
+  const [loadingInsight, setLoadingInsight] = useState(false);
+  const [insightLoaded, setInsightLoaded] = useState(false);
+
+  // Load chart data immediately
+  useEffect(() => {
+    setLoadingChart(true);
+    setBars([]);
+    setTrendlines([]);
+    setInsight(null);
+    setInsightLoaded(false);
+
+    Promise.allSettled([
+      apiFetch(`/api/bars?ticker=${ticker}&timeframe=1day&limit=120`),
+      apiFetch(`/api/trendlines?ticker=${ticker}`),
+    ]).then(([barsRes, tlRes]) => {
+      if (barsRes.status === "fulfilled") setBars(barsRes.value.bars ?? []);
+      if (tlRes.status === "fulfilled") setTrendlines(tlRes.value.trendlines ?? []);
+      setLoadingChart(false);
+    });
+  }, [ticker]);
+
+  // Lazy-load fundamentals + AI when tab is switched
+  const loadInsight = async () => {
+    if (insightLoaded) return;
+    setLoadingInsight(true);
+    try {
+      const data = await apiFetch(`/api/fundamentals/insight?ticker=${ticker}`);
+      setInsight(data);
+    } catch {}
+    setLoadingInsight(false);
+    setInsightLoaded(true);
+  };
+
+  const switchTab = (t: typeof tab) => {
+    setTab(t);
+    if (t === "fundamentals" || t === "ai") loadInsight();
+  };
+
+  const TAB = { background: "none", border: "none", cursor: "pointer", padding: "8px 16px", fontSize: 12, fontWeight: 600 };
+  const activeTab = { ...TAB, color: "#e2e8f0", borderBottom: "2px solid #818cf8" };
+  const inactiveTab = { ...TAB, color: "#52525b", borderBottom: "2px solid transparent" };
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 40 }} />
+
+      {/* Drawer */}
+      <div style={{ position: "fixed", top: 0, right: 0, width: 640, height: "100vh", background: "#0d0d15", borderLeft: "1px solid #1e1e2e", zIndex: 50, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+
+        {/* Drawer header */}
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid #1e1e2e", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#111119" }}>
+          <div>
+            <span style={{ fontSize: 20, fontWeight: 700, color: "#e2e8f0" }}>{ticker}</span>
+            {insight?.raw?.companyName && <span style={{ color: "#a1a1aa", fontSize: 13, marginLeft: 10 }}>{insight.raw.companyName}</span>}
+            {insight?.raw?.sector && <span style={{ background: "#1e1e2e", color: "#818cf8", padding: "2px 8px", borderRadius: 3, fontSize: 10, marginLeft: 8 }}>{insight.raw.sector}</span>}
+            {insight?.raw?.price != null && <span style={{ color: "#e2e8f0", fontSize: 14, marginLeft: 12, fontWeight: 600 }}>${Number(insight.raw.price).toFixed(2)}</span>}
+          </div>
+          <button onClick={onClose} style={{ ...btnStyle, fontSize: 16, padding: "4px 10px" }}>✕</button>
+        </div>
+
+        {/* Tabs */}
+        <div style={{ display: "flex", borderBottom: "1px solid #1e1e2e", background: "#0d0d15" }}>
+          <button onClick={() => switchTab("chart")} style={tab === "chart" ? activeTab : inactiveTab}>CHART</button>
+          <button onClick={() => switchTab("fundamentals")} style={tab === "fundamentals" ? activeTab : inactiveTab}>FUNDAMENTALS</button>
+          <button onClick={() => switchTab("ai")} style={tab === "ai" ? activeTab : inactiveTab}>AI ANALYSIS</button>
+        </div>
+
+        {/* Tab content */}
+        <div style={{ flex: 1, overflow: "auto", padding: "20px" }}>
+
+          {/* ── Chart Tab ── */}
+          {tab === "chart" && (
+            loadingChart ? (
+              <div style={{ color: "#52525b", fontSize: 12, paddingTop: 40, textAlign: "center" }}>Loading price data...</div>
+            ) : bars.length === 0 ? (
+              <div style={{ color: "#52525b", fontSize: 12, paddingTop: 40, textAlign: "center" }}>
+                No price data for {ticker}.
+                <div style={{ marginTop: 8, fontFamily: "monospace", color: "#818cf8", fontSize: 11 }}>
+                  Run: npx tsx scripts/run-pipeline.ts {ticker}
+                </div>
+              </div>
+            ) : (
+              <PriceChart ticker={ticker} bars={bars} trendlines={trendlines} />
+            )
+          )}
+
+          {/* ── Fundamentals Tab ── */}
+          {tab === "fundamentals" && (
+            <div>
+              {loadingInsight && <div style={{ color: "#52525b", fontSize: 12, paddingTop: 20, textAlign: "center" }}>Loading...</div>}
+              {!loadingInsight && insight?.error && !insight?.raw && (
+                <div style={{ color: "#6b7280", fontSize: 12, lineHeight: 1.6 }}>{insight.error}</div>
+              )}
+              {!loadingInsight && insight?.raw && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                  <div>
+                    <div style={{ ...sectionTitle, marginBottom: 12 }}>VALUATION</div>
+                    <FundRow label="Market Cap" value={insight.raw.marketCapFormatted ?? "—"} />
+                    <FundRow label="P/E" value={insight.raw.pe != null ? Number(insight.raw.pe).toFixed(1) : "—"} />
+                    <FundRow label="P/S" value={insight.raw.ps != null ? Number(insight.raw.ps).toFixed(1) : "—"} />
+                    <FundRow label="P/B" value={insight.raw.pb != null ? Number(insight.raw.pb).toFixed(1) : "—"} />
+                    <FundRow label="Beta" value={insight.raw.beta != null ? Number(insight.raw.beta).toFixed(2) : "—"} />
+                    <FundRow label="52w Range" value={insight.raw.range52w ?? "—"} />
+
+                    <div style={{ ...sectionTitle, marginTop: 20, marginBottom: 12 }}>PROFITABILITY</div>
+                    <FundRow label="Net Margin" value={insight.raw.netMargin != null ? `${insight.raw.netMargin}%` : "—"} color={insight.raw.netMargin > 20 ? "#4ade80" : insight.raw.netMargin > 0 ? "#facc15" : "#ef4444"} />
+                    <FundRow label="Gross Margin" value={insight.raw.grossMargin != null ? `${insight.raw.grossMargin}%` : "—"} />
+                    <FundRow label="ROE" value={insight.raw.roe != null ? `${insight.raw.roe}%` : "—"} color={insight.raw.roe > 15 ? "#4ade80" : insight.raw.roe > 0 ? "#facc15" : "#ef4444"} />
+                    <FundRow label="Debt/Equity" value={insight.raw.debtToEquity != null ? Number(insight.raw.debtToEquity).toFixed(2) : "—"} />
+                    {insight.raw.dividendYield > 0 && <FundRow label="Div Yield" value={`${insight.raw.dividendYield}%`} color="#4ade80" />}
+                  </div>
+                  <div>
+                    {insight.position?.qty > 0 && (
+                      <>
+                        <div style={{ ...sectionTitle, marginBottom: 12 }}>YOUR POSITION</div>
+                        <FundRow label="Shares" value={String(insight.position.qty)} />
+                        <FundRow label="Avg Cost" value={`$${insight.position.avgCost.toFixed(2)}`} />
+                        <FundRow label="Current" value={`$${insight.position.currentPrice.toFixed(2)}`} />
+                        <FundRow label="Value" value={`$${insight.position.positionValue.toLocaleString()}`} />
+                        <FundRow label="P&L" value={`${insight.position.unrealizedPnlPct >= 0 ? "+" : ""}${insight.position.unrealizedPnlPct.toFixed(1)}%`} color={insight.position.unrealizedPnlPct >= 0 ? "#4ade80" : "#ef4444"} />
+                        <FundRow label="Portfolio %" value={`${insight.position.portfolioPct.toFixed(1)}%`} />
+                      </>
+                    )}
+                    {insight.raw.description && (
+                      <>
+                        <div style={{ ...sectionTitle, marginTop: insight.position?.qty > 0 ? 20 : 0, marginBottom: 12 }}>ABOUT</div>
+                        <div style={{ color: "#6b7280", fontSize: 11, lineHeight: 1.7 }}>{insight.raw.description}...</div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── AI Analysis Tab ── */}
+          {tab === "ai" && (
+            <div>
+              {loadingInsight && <div style={{ color: "#52525b", fontSize: 12, paddingTop: 20, textAlign: "center" }}>Claude is thinking...</div>}
+              {!loadingInsight && insight?.aiInsight && (
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+                    <span style={{ fontSize: 10, color: "#818cf8", fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase" }}>AI ANALYSIS</span>
+                    <span style={{ fontSize: 10, color: "#3b82f6", background: "#1e3a5f", padding: "2px 8px", borderRadius: 3 }}>Claude Sonnet</span>
+                    <span style={{ fontSize: 10, color: "#52525b" }}>Personalized to your portfolio</span>
+                  </div>
+                  <div style={{ color: "#c7d2fe", fontSize: 14, lineHeight: 1.8, whiteSpace: "pre-line" }}>
+                    {insight.aiInsight}
+                  </div>
+                  {/* Fundamentals context strip */}
+                  {insight.raw && (
+                    <div style={{ marginTop: 24, padding: 16, background: "#111119", borderRadius: 8, border: "1px solid #1e1e2e", display: "flex", flexWrap: "wrap", gap: 16 }}>
+                      {[
+                        { label: "Market Cap", v: insight.raw.marketCapFormatted },
+                        { label: "Net Margin", v: insight.raw.netMargin != null ? `${insight.raw.netMargin}%` : "—" },
+                        { label: "P/E", v: insight.raw.pe != null ? Number(insight.raw.pe).toFixed(1) : "—" },
+                        { label: "P/S", v: insight.raw.ps != null ? Number(insight.raw.ps).toFixed(1) : "—" },
+                        { label: "ROE", v: insight.raw.roe != null ? `${insight.raw.roe}%` : "—" },
+                        { label: "Debt/Equity", v: insight.raw.debtToEquity != null ? Number(insight.raw.debtToEquity).toFixed(2) : "—" },
+                      ].map(({ label, v }) => v && v !== "—" && (
+                        <div key={label} style={{ fontSize: 11 }}>
+                          <span style={{ color: "#52525b" }}>{label}: </span>
+                          <span style={{ color: "#a1a1aa", fontWeight: 600 }}>{v}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              {!loadingInsight && !insight?.aiInsight && insight?.error && (
+                <div style={{ color: "#6b7280", fontSize: 12, lineHeight: 1.6, paddingTop: 20 }}>{insight.error}</div>
+              )}
+              {!loadingInsight && !insight && (
+                <div style={{ color: "#52525b", fontSize: 12, paddingTop: 20 }}>No analysis available.</div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── Price Chart (SVG) ─────────────────────────────────────────
+// Simple SVG line chart with trendlines projected to current date.
+
+function PriceChart({
+  ticker,
+  bars,
+  trendlines,
+}: {
+  ticker: string;
+  bars: Array<{ date: string; close: number; high: number; low: number }>;
+  trendlines: Array<{ slope: number; intercept: number; direction: string; timeframe: string; lineType: string }>;
+}) {
+  const W = 580, H = 300, PAD = { top: 20, right: 20, bottom: 32, left: 55 };
+  const innerW = W - PAD.left - PAD.right;
+  const innerH = H - PAD.top - PAD.bottom;
+
+  const closes = bars.map((b) => b.close);
+  const minP = Math.min(...closes) * 0.97;
+  const maxP = Math.max(...closes) * 1.03;
+
+  const xScale = (i: number) => (i / (bars.length - 1)) * innerW;
+  const yScale = (p: number) => innerH - ((p - minP) / (maxP - minP)) * innerH;
+
+  // Price line
+  const linePath = bars.map((b, i) => `${i === 0 ? "M" : "L"}${xScale(i).toFixed(1)},${yScale(b.close).toFixed(1)}`).join(" ");
+
+  // Current price reference
+  const latestClose = closes[closes.length - 1];
+
+  // Y-axis labels
+  const yTicks = 5;
+  const yLabels = Array.from({ length: yTicks }, (_, i) => {
+    const p = minP + ((maxP - minP) * i) / (yTicks - 1);
+    return { p, y: yScale(p) };
+  });
+
+  // X-axis labels (show ~5 dates)
+  const xLabelIdxs = [0, Math.floor(bars.length * 0.25), Math.floor(bars.length * 0.5), Math.floor(bars.length * 0.75), bars.length - 1];
+
+  // Trendlines projected
+  const tlColors: Record<string, string> = {
+    support: "#4ade80", resistance: "#ef4444",
+  };
+
+  return (
+    <div>
+      <div style={{ fontSize: 11, color: "#52525b", marginBottom: 8 }}>
+        {bars.length} trading days · Latest: <span style={{ color: "#e2e8f0" }}>${latestClose.toFixed(2)}</span>
+        {trendlines.length > 0 && <span style={{ marginLeft: 8 }}>· {trendlines.length} trendlines</span>}
+      </div>
+      <svg width={W} height={H} style={{ display: "block", overflow: "visible" }}>
+        <g transform={`translate(${PAD.left},${PAD.top})`}>
+          {/* Grid lines */}
+          {yLabels.map(({ y }, i) => (
+            <line key={i} x1={0} y1={y.toFixed(1)} x2={innerW} y2={y.toFixed(1)} stroke="#1e1e2e" strokeWidth={1} />
+          ))}
+
+          {/* Y-axis labels */}
+          {yLabels.map(({ p, y }, i) => (
+            <text key={i} x={-6} y={(y + 4).toFixed(1)} textAnchor="end" fill="#52525b" fontSize={9}>
+              ${p.toFixed(0)}
+            </text>
+          ))}
+
+          {/* X-axis labels */}
+          {xLabelIdxs.map((idx) => (
+            <text key={idx} x={xScale(idx).toFixed(1)} y={(innerH + 18).toFixed(1)} textAnchor="middle" fill="#52525b" fontSize={9}>
+              {bars[idx]?.date?.slice(5) ?? ""}
+            </text>
+          ))}
+
+          {/* Trendlines */}
+          {trendlines.slice(0, 6).map((tl, i) => {
+            // Project line: y = slope * x_index + intercept
+            // x_index maps to bar index relative to start
+            // We approximate: intercept is the price at bar 0
+            const x0 = 0, x1 = innerW;
+            const p0 = tl.intercept;
+            const p1 = tl.intercept + tl.slope * (bars.length - 1);
+            const y0 = yScale(p0), y1 = yScale(p1);
+            const color = tlColors[tl.lineType] ?? (tl.direction === "bull" ? "#4ade80" : "#ef4444");
+            return (
+              <line key={i} x1={x0} y1={y0.toFixed(1)} x2={x1.toFixed(1)} y2={y1.toFixed(1)}
+                stroke={color} strokeWidth={1} strokeDasharray="4,3" opacity={0.7} />
+            );
+          })}
+
+          {/* Area fill */}
+          <defs>
+            <linearGradient id={`grad-${ticker}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#818cf8" stopOpacity="0.15" />
+              <stop offset="100%" stopColor="#818cf8" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <path d={`${linePath} L${innerW},${innerH} L0,${innerH} Z`} fill={`url(#grad-${ticker})`} />
+
+          {/* Price line */}
+          <path d={linePath} fill="none" stroke="#818cf8" strokeWidth={1.5} />
+
+          {/* Latest price dot */}
+          <circle cx={xScale(bars.length - 1).toFixed(1)} cy={yScale(latestClose).toFixed(1)} r={3} fill="#e2e8f0" />
+        </g>
+      </svg>
+
+      {/* Trendline legend */}
+      {trendlines.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+          {trendlines.slice(0, 6).map((tl, i) => {
+            const color = tl.lineType === "support" ? "#4ade80" : "#ef4444";
+            return (
+              <span key={i} style={{ fontSize: 10, color: "#6b7280" }}>
+                <span style={{ color, marginRight: 3 }}>—</span>
+                {tl.lineType} {tl.timeframe} {tl.direction}
+              </span>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Simple full-width label:value row for the Fundamentals tab
+function FundRow({ label, value, color = "#a1a1aa" }: { label: string; value: string; color?: string }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: "1px solid #1a1a27", fontSize: 12 }}>
+      <span style={{ color: "#52525b" }}>{label}</span>
+      <span style={{ color, fontWeight: value !== "—" ? 500 : 400 }}>{value}</span>
     </div>
   );
 }
