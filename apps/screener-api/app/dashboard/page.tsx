@@ -412,6 +412,9 @@ export default function DashboardV2() {
               <div style={{ color: "#52525b", padding: 16, textAlign: "center" }}>No positions. The agent will propose entries when opportunities arise.</div>
             )}
           </div>
+
+          {/* Fundamentals Panel */}
+          <FundamentalsPanel positions={b?.portfolio?.positions ?? []} />
         </div>
 
         {/* ── Right Column: Insight + Status ──────────── */}
@@ -586,6 +589,177 @@ function ImportPanel({ connections, showToast, onRefresh }: {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Fundamentals Panel ────────────────────────────────────────
+// Raw numbers on the left. AI coaching on the right.
+// Lazy: each ticker loads on expand, not on page load.
+
+interface FundamentalsData {
+  raw: {
+    companyName: string; sector: string; industry: string; marketCapFormatted: string;
+    price: number; beta: number | null; range52w: string | null;
+    pe: number | null; ps: number | null; pb: number | null;
+    netMargin: number | null; grossMargin: number | null; roe: number | null;
+    debtToEquity: number | null; dividendYield: number | null;
+    description: string | null;
+  };
+  position: {
+    qty: number; avgCost: number; currentPrice: number;
+    unrealizedPnlPct: number; positionValue: number; portfolioPct: number;
+  };
+  aiInsight: string | null;
+}
+
+function FundamentalsPanel({ positions }: { positions: Array<{ symbol: string; qty: number }> }) {
+  const [open, setOpen] = useState(false);
+  const tickers = [...new Set(positions.map((p) => p.symbol))].slice(0, 22);
+
+  return (
+    <div style={{ borderTop: "2px solid #1e1e2e" }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{ width: "100%", background: "none", border: "none", color: "#818cf8", padding: "12px 24px", cursor: "pointer", textAlign: "left", fontSize: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}
+      >
+        <div>
+          <span style={{ fontWeight: 600 }}>FUNDAMENTALS</span>
+          <span style={{ color: "#52525b", marginLeft: 8, fontSize: 10 }}>Raw data + AI interpretation — {tickers.length} positions</span>
+        </div>
+        <span style={{ color: "#52525b" }}>{open ? "▼" : "▶"}</span>
+      </button>
+      {open && (
+        <div style={{ padding: "0 24px 24px" }}>
+          {tickers.length === 0 && (
+            <div style={{ color: "#52525b", fontSize: 12, padding: "16px 0" }}>No positions to analyze. Import your portfolio first.</div>
+          )}
+          {tickers.map((ticker) => (
+            <FundamentalsCard key={ticker} ticker={ticker} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FundamentalsCard({ ticker }: { ticker: string }) {
+  const [data, setData] = useState<FundamentalsData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = async () => {
+    if (data || loading) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/fundamentals/insight?ticker=${ticker}`, { headers: authHeaders });
+      const json = await res.json();
+      if (json.error) setError(json.error);
+      else setData(json);
+    } catch {
+      setError("Failed to load");
+    }
+    setLoading(false);
+  };
+
+  const toggle = () => {
+    setExpanded(!expanded);
+    if (!expanded && !data) load();
+  };
+
+  const pnlColor = data ? (data.position.unrealizedPnlPct >= 0 ? "#4ade80" : "#ef4444") : "#6b7280";
+
+  return (
+    <div style={{ borderTop: "1px solid #1e1e2e", marginTop: 0 }}>
+      <button
+        onClick={toggle}
+        style={{ width: "100%", background: "none", border: "none", padding: "10px 0", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, textAlign: "left" }}
+      >
+        <span style={{ color: "#e2e8f0", fontWeight: 700, width: 55 }}>{ticker}</span>
+        {data && (
+          <>
+            <span style={{ color: "#6b7280", fontSize: 11, flex: 1 }}>{data.raw.companyName} · {data.raw.sector}</span>
+            <span style={{ color: pnlColor, fontSize: 11 }}>
+              {data.position.qty > 0
+                ? `${data.position.unrealizedPnlPct >= 0 ? "+" : ""}${data.position.unrealizedPnlPct.toFixed(1)}% · ${data.position.portfolioPct.toFixed(1)}% of portfolio`
+                : "Not owned"}
+            </span>
+          </>
+        )}
+        {loading && <span style={{ color: "#52525b", fontSize: 11 }}>Loading...</span>}
+        {error && <span style={{ color: "#ef4444", fontSize: 11 }}>{error}</span>}
+        {!data && !loading && !error && <span style={{ color: "#52525b", fontSize: 11 }}>Click to load fundamentals</span>}
+        <span style={{ color: "#3f3f46", fontSize: 11 }}>{expanded ? "▼" : "▶"}</span>
+      </button>
+
+      {expanded && data && (
+        <div style={{ paddingBottom: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          {/* Left: Raw numbers */}
+          <div style={{ background: "#111119", borderRadius: 8, padding: 14, border: "1px solid #1e1e2e" }}>
+            <div style={{ ...sectionTitle, marginBottom: 10 }}>RAW DATA</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 12px", fontSize: 11 }}>
+              <FundStat label="Market Cap" value={data.raw.marketCapFormatted} />
+              <FundStat label="P/E" value={data.raw.pe != null ? data.raw.pe.toFixed(1) : "—"} />
+              <FundStat label="P/S" value={data.raw.ps != null ? data.raw.ps.toFixed(1) : "—"} />
+              <FundStat label="P/B" value={data.raw.pb != null ? data.raw.pb.toFixed(1) : "—"} />
+              <FundStat label="Net Margin" value={data.raw.netMargin != null ? `${data.raw.netMargin}%` : "—"} highlight={data.raw.netMargin != null ? (data.raw.netMargin > 20 ? "good" : data.raw.netMargin > 0 ? "neutral" : "bad") : undefined} />
+              <FundStat label="Gross Margin" value={data.raw.grossMargin != null ? `${data.raw.grossMargin}%` : "—"} />
+              <FundStat label="ROE" value={data.raw.roe != null ? `${data.raw.roe}%` : "—"} highlight={data.raw.roe != null ? (data.raw.roe > 15 ? "good" : data.raw.roe > 0 ? "neutral" : "bad") : undefined} />
+              <FundStat label="Debt/Equity" value={data.raw.debtToEquity != null ? data.raw.debtToEquity.toFixed(2) : "—"} highlight={data.raw.debtToEquity != null ? (data.raw.debtToEquity < 0.5 ? "good" : data.raw.debtToEquity < 2 ? "neutral" : "bad") : undefined} />
+              <FundStat label="Div Yield" value={data.raw.dividendYield != null ? `${data.raw.dividendYield}%` : "—"} />
+              <FundStat label="Beta" value={data.raw.beta != null ? data.raw.beta.toFixed(2) : "—"} />
+              {data.raw.range52w && <div style={{ gridColumn: "1/-1" }}><FundStat label="52w Range" value={data.raw.range52w} /></div>}
+            </div>
+            {data.position.qty > 0 && (
+              <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid #1e1e2e" }}>
+                <div style={{ ...sectionTitle, marginBottom: 6 }}>YOUR POSITION</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 12px", fontSize: 11 }}>
+                  <FundStat label="Shares" value={String(data.position.qty)} />
+                  <FundStat label="Avg Cost" value={`$${data.position.avgCost.toFixed(2)}`} />
+                  <FundStat label="Current" value={`$${data.position.currentPrice.toFixed(2)}`} />
+                  <FundStat label="Value" value={`$${data.position.positionValue.toLocaleString()}`} />
+                  <FundStat label="P&L" value={`${data.position.unrealizedPnlPct >= 0 ? "+" : ""}${data.position.unrealizedPnlPct.toFixed(1)}%`} highlight={data.position.unrealizedPnlPct >= 0 ? "good" : "bad"} />
+                  <FundStat label="Portfolio %" value={`${data.position.portfolioPct.toFixed(1)}%`} />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right: AI coaching */}
+          <div style={{ background: "#0c1020", borderRadius: 8, padding: 14, border: "1px solid #1e3a5f" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+              <span style={{ fontSize: 9, color: "#818cf8", fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase" }}>AI INSIGHT</span>
+              <span style={{ fontSize: 9, color: "#3b82f6", background: "#1e3a5f", padding: "1px 6px", borderRadius: 3 }}>Claude</span>
+            </div>
+            {data.aiInsight ? (
+              <div style={{ color: "#c7d2fe", fontSize: 12, lineHeight: 1.7 }}>
+                {data.aiInsight}
+              </div>
+            ) : (
+              <div style={{ color: "#52525b", fontSize: 11 }}>
+                AI interpretation unavailable — check MONEY_OS_ANTHROPIC_KEY in .env.local
+              </div>
+            )}
+            {data.raw.description && (
+              <div style={{ marginTop: 12, color: "#52525b", fontSize: 10, lineHeight: 1.6, borderTop: "1px solid #1e1e2e", paddingTop: 10 }}>
+                {data.raw.description}...
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FundStat({ label, value, highlight }: { label: string; value: string; highlight?: "good" | "neutral" | "bad" }) {
+  const valueColor = highlight === "good" ? "#4ade80" : highlight === "bad" ? "#ef4444" : highlight === "neutral" ? "#facc15" : "#a1a1aa";
+  return (
+    <div style={{ padding: "2px 0" }}>
+      <span style={{ color: "#52525b" }}>{label}: </span>
+      <span style={{ color: valueColor, fontWeight: highlight ? 600 : 400 }}>{value}</span>
     </div>
   );
 }

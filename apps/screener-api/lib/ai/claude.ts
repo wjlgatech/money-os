@@ -185,6 +185,57 @@ Context:
 }
 
 /**
+ * Personalized fundamental analysis interpretation.
+ * Given raw financial data + the user's specific position, explains what it means FOR THEM.
+ */
+export async function interpretFundamentals(context: {
+  ticker: string;
+  companyName: string;
+  sector: string;
+  marketCapFormatted: string;
+  netMargin: number | null;
+  grossMargin: number | null;
+  roe: number | null;
+  debtToEquity: number | null;
+  pe: number | null;
+  ps: number | null;
+  // User's position
+  qty: number;
+  avgCost: number;
+  currentPrice: number;
+  unrealizedPnlPct: number;
+  positionValue: number;
+  portfolioPct: number;
+}): Promise<string> {
+  const positionCtx = context.qty > 0
+    ? `User owns ${context.qty} shares @ $${context.avgCost.toFixed(2)} avg cost (${context.unrealizedPnlPct >= 0 ? "+" : ""}${context.unrealizedPnlPct.toFixed(1)}% unrealized, $${context.positionValue.toLocaleString()} = ${context.portfolioPct.toFixed(1)}% of portfolio)`
+    : "User does not currently own this stock";
+
+  const fundamentalsCtx = [
+    context.netMargin != null ? `Net margin: ${context.netMargin}%` : null,
+    context.grossMargin != null ? `Gross margin: ${context.grossMargin}%` : null,
+    context.roe != null ? `ROE: ${context.roe}%` : null,
+    context.debtToEquity != null ? `Debt/Equity: ${context.debtToEquity.toFixed(2)}` : null,
+    context.pe != null ? `P/E: ${context.pe.toFixed(1)}` : null,
+    context.ps != null ? `P/S: ${context.ps.toFixed(1)}` : null,
+    `Market cap: ${context.marketCapFormatted}`,
+    `Sector: ${context.sector}`,
+  ].filter(Boolean).join(" | ");
+
+  return ask(
+    `You are a financial coach. Write plain prose — no markdown headers, no bullet points, no bold. 2-3 tight sentences. Use a vivid analogy if it carries real meaning. Be brutally honest.`,
+    `Analyze ${context.companyName} (${context.ticker}) for this specific investor:
+
+Fundamentals: ${fundamentalsCtx}
+
+Position: ${positionCtx}
+
+In 2-3 plain sentences: what do these fundamentals mean given their exact position? Name the one thing they should watch. If they're deeply green like NVDA at +62%, say what could crack the thesis. Be specific — no generic advice.`,
+    180
+  );
+}
+
+/**
  * Extract portfolio holdings from a screenshot description.
  * (Used when Claude vision processes the image — the dashboard
  * sends the image to this function for interpretation.)
