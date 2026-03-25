@@ -66,6 +66,10 @@ export default function DashboardV2() {
   const [error, setError] = useState<string | null>(null);
   const [approving, setApproving] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchResult, setSearchResult] = useState<any>(null);
+  const [searching, setSearching] = useState(false);
+  const [quickAdd, setQuickAdd] = useState("");
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 4000); };
 
@@ -107,6 +111,31 @@ export default function DashboardV2() {
       showToast("Proposal skipped");
       await refresh();
     } catch { showToast("Failed to skip"); }
+  };
+
+  const handleSearch = async () => {
+    const ticker = searchInput.trim().toUpperCase();
+    if (!ticker) return;
+    setSearching(true);
+    try {
+      const data = await apiFetch(`/api/opportunities?search=${ticker}`);
+      setSearchResult(data);
+    } catch { showToast("Search failed"); }
+    setSearching(false);
+  };
+
+  const handleQuickAdd = async () => {
+    // Parse: "10 TSLA" or "TSLA 10" or "50 shares AAPL at 142"
+    const match = quickAdd.match(/(\d+)\s*(?:shares?\s+)?([A-Za-z]+)|([A-Za-z]+)\s+(\d+)/);
+    if (!match) { showToast("Format: '10 TSLA' or 'TSLA 10'"); return; }
+    const qty = Number(match[1] ?? match[4]);
+    const ticker = (match[2] ?? match[3]).toUpperCase();
+    try {
+      await apiPost("/api/portfolio", { action: "add", positions: [{ ticker, qty, type: "stock" }] });
+      showToast(`Added ${qty} ${ticker} to your portfolio`);
+      setQuickAdd("");
+      await refresh();
+    } catch { showToast("Failed to add position"); }
   };
 
   if (loading && !briefing) {
@@ -170,6 +199,59 @@ export default function DashboardV2() {
           <button onClick={refresh} style={btnStyle}>{loading ? "..." : "Refresh"}</button>
         </div>
       </header>
+
+      {/* Search + Quick Add bar */}
+      <div style={{ display: "flex", gap: 8, padding: "8px 24px", borderBottom: "1px solid #1e1e2e", background: "#0c0c14", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 4, flex: 1 }}>
+          <input value={searchInput} onChange={(e) => setSearchInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            placeholder="Search any ticker (TSLA, BTC, AMZN...)"
+            style={{ flex: 1, background: "#111119", border: "1px solid #2e2e3e", color: "#e2e8f0", padding: "6px 12px", borderRadius: 5, fontSize: 12, outline: "none" }} />
+          <button onClick={handleSearch} disabled={searching} style={{ ...btnStyle, background: "#3b82f6", color: "#fff" }}>{searching ? "..." : "Search"}</button>
+        </div>
+        <div style={{ width: 1, height: 24, background: "#2e2e3e" }} />
+        <div style={{ display: "flex", gap: 4 }}>
+          <input value={quickAdd} onChange={(e) => setQuickAdd(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleQuickAdd()}
+            placeholder="Quick add: 10 TSLA"
+            style={{ width: 140, background: "#111119", border: "1px solid #2e2e3e", color: "#e2e8f0", padding: "6px 12px", borderRadius: 5, fontSize: 12, outline: "none" }} />
+          <button onClick={handleQuickAdd} style={{ ...btnStyle, background: "#065f46", color: "#4ade80" }}>+ Add</button>
+        </div>
+      </div>
+
+      {/* Search Result (overlay) */}
+      {searchResult && (
+        <div style={{ padding: "12px 24px", borderBottom: "1px solid #1e1e2e", background: "#0f0f18" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <span style={{ fontSize: 16, fontWeight: 700, color: "#e2e8f0" }}>{searchResult.search}</span>
+              {searchResult.owned && <span style={{ marginLeft: 8, background: "#065f46", color: "#4ade80", padding: "2px 8px", borderRadius: 3, fontSize: 10 }}>YOU OWN THIS</span>}
+              {!searchResult.inUniverse && <span style={{ marginLeft: 8, color: "#6b7280", fontSize: 10 }}>Not in scanner universe</span>}
+            </div>
+            <button onClick={() => setSearchResult(null)} style={{ ...btnStyle, fontSize: 10 }}>Close</button>
+          </div>
+          {searchResult.scanResults?.length > 0 ? (
+            <div style={{ marginTop: 8 }}>
+              {searchResult.scanResults.slice(0, 3).map((r: any, i: number) => (
+                <div key={i} style={{ fontSize: 12, color: "#a1a1aa", padding: "3px 0" }}>
+                  {r.zone} zone | {r.direction} {r.timeframe} | {Number(r.distanceAtr).toFixed(1)} ATR away | ${Number(r.price).toFixed(2)}
+                </div>
+              ))}
+              {searchResult.signals?.length > 0 && (
+                <div style={{ marginTop: 4 }}>
+                  {searchResult.signals.map((s: any, i: number) => (
+                    <span key={i} style={{ background: s.direction === "bull" ? "#065f46" : "#7f1d1d", color: "#e2e8f0", padding: "1px 6px", borderRadius: 3, fontSize: 10, marginRight: 4 }}>
+                      {s.direction === "bull" ? "↑" : "↓"} {s.signalType}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{ color: "#6b7280", fontSize: 12, marginTop: 8 }}>
+              No scanner data for {searchResult.search}. {!searchResult.inUniverse ? "Add it to the universe to start tracking." : "No entry/alert zones detected currently."}
+            </div>
+          )}
+        </div>
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", minHeight: "calc(100vh - 52px)" }}>
         {/* ── Main Column ─────────────────────────────── */}
