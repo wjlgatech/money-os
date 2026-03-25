@@ -10,7 +10,10 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 
-const client = new Anthropic();
+// Explicitly use the key from .env.local, not system env
+// (system env may have a different workspace's key)
+const MONEY_OS_API_KEY = process.env.MONEY_OS_ANTHROPIC_KEY ?? process.env.ANTHROPIC_API_KEY ?? "";
+const client = new Anthropic({ apiKey: MONEY_OS_API_KEY });
 const MODEL = "claude-sonnet-4-6";
 
 // ── Core Call ────────────────────────────────────────────────
