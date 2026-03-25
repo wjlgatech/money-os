@@ -354,21 +354,8 @@ export default function DashboardV2() {
                 </div>
               </Expandable>
 
-              <Expandable title="Portfolio connections">
-                <div style={{ fontSize: 12 }}>
-                  {b.connections && Object.entries(b.connections).map(([name, status]) => (
-                    <div key={name} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
-                      <span style={{ color: "#a1a1aa", textTransform: "capitalize" }}>{name}</span>
-                      <span style={{ color: (status as string).includes("Connected") ? "#4ade80" : "#6b7280", fontSize: 11 }}>{status as string}</span>
-                    </div>
-                  ))}
-                  <div style={{ marginTop: 8, padding: "8px 10px", background: "#111119", borderRadius: 6, border: "1px solid #1e1e2e" }}>
-                    <div style={{ color: "#a1a1aa", fontSize: 11, marginBottom: 4 }}>Import your real portfolio:</div>
-                    <div style={{ color: "#6b7280", fontSize: 11, lineHeight: 1.6 }}>
-                      In Claude, say <span style={{ color: "#3b82f6" }}>/import-portfolio</span> and share a screenshot of your Fidelity, Moomoo, Coinbase, or Kraken positions page. AI vision extracts all holdings automatically — no API keys or OAuth needed.
-                    </div>
-                  </div>
-                </div>
+              <Expandable title={`Import portfolio — ${Object.values(b.connections ?? {}).filter((s) => (s as string).includes("Connected")).length} connected`}>
+                <ImportPanel connections={b.connections} showToast={showToast} onRefresh={refresh} />
               </Expandable>
             </div>
           )}
@@ -503,6 +490,105 @@ function ConfBadge({ confidence }: { confidence: string }) {
 }
 
 // ── Styles ───────────────────────────────────────────────────
+
+// ── Import Panel ─────────────────────────────────────────────
+
+function ImportPanel({ connections, showToast, onRefresh }: {
+  connections: Record<string, string> | undefined;
+  showToast: (msg: string) => void;
+  onRefresh: () => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+
+  const handleScreenshot = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+
+    try {
+      // Convert to base64
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = (reader.result as string).split(",")[1];
+        const mimeType = file.type || "image/png";
+
+        const res = await fetch("/api/ai/screenshot", {
+          method: "POST",
+          headers: { ...authHeaders, "Content-Type": "application/json" },
+          body: JSON.stringify({ image: base64, mimeType }),
+        });
+        const data = await res.json();
+
+        if (data.holdings?.length > 0) {
+          // Save to portfolio
+          await fetch("/api/portfolio", {
+            method: "POST",
+            headers: { ...authHeaders, "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "add", positions: data.holdings.map((h: any) => ({
+              ticker: h.ticker, qty: h.qty, avgCost: h.avgCost, type: h.type ?? "stock",
+            })) }),
+          });
+          showToast(`Imported ${data.holdings.length} positions from screenshot`);
+          onRefresh();
+        } else {
+          showToast("No positions found in screenshot. Try a clearer image of your positions page.");
+        }
+        setUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      showToast("Screenshot import failed");
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div style={{ fontSize: 12 }}>
+      {/* Connection status */}
+      {connections && Object.entries(connections).map(([name, status]) => (
+        <div key={name} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
+          <span style={{ color: "#a1a1aa", textTransform: "capitalize" }}>{name}</span>
+          <span style={{ color: (status as string).includes("Connected") ? "#4ade80" : "#6b7280", fontSize: 11 }}>{status as string}</span>
+        </div>
+      ))}
+
+      {/* Import methods */}
+      <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+        {/* Screenshot upload */}
+        <label style={{
+          display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
+          background: "#111119", borderRadius: 6, border: "1px dashed #2e2e3e",
+          cursor: "pointer", transition: "border-color 0.2s",
+        }}>
+          <span style={{ fontSize: 20 }}>📸</span>
+          <div>
+            <div style={{ color: "#e2e8f0", fontSize: 12, fontWeight: 500 }}>
+              {uploading ? "Extracting holdings..." : "Upload broker screenshot"}
+            </div>
+            <div style={{ color: "#6b7280", fontSize: 10 }}>
+              Fidelity, Moomoo, Coinbase, Kraken — any positions page
+            </div>
+          </div>
+          <input type="file" accept="image/*" onChange={handleScreenshot} style={{ display: "none" }} disabled={uploading} />
+        </label>
+
+        {/* Quick add reminder */}
+        <div style={{ padding: "8px 12px", background: "#111119", borderRadius: 6, border: "1px solid #1e1e2e" }}>
+          <div style={{ color: "#a1a1aa", fontSize: 11 }}>
+            Or use the <span style={{ color: "#4ade80" }}>Quick Add</span> bar above: type <span style={{ color: "#e2e8f0", fontFamily: "monospace" }}>10 TSLA</span> to add positions manually
+          </div>
+        </div>
+
+        {/* API connection hint */}
+        <div style={{ padding: "8px 12px", background: "#111119", borderRadius: 6, border: "1px solid #1e1e2e" }}>
+          <div style={{ color: "#6b7280", fontSize: 10, lineHeight: 1.5 }}>
+            For live sync: add API keys for Coinbase, Kraken, or Moomoo in <span style={{ fontFamily: "monospace", color: "#818cf8" }}>.env.local</span>. For Fidelity/Schwab/Vanguard: set up Plaid.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const pageStyle: React.CSSProperties = {
   background: "#0a0a0f", color: "#e4e4e7", minHeight: "100vh",
