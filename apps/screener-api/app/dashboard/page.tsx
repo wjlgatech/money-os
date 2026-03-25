@@ -68,6 +68,7 @@ export default function DashboardV2() {
   const [toast, setToast] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState("");
   const [searchResult, setSearchResult] = useState<any>(null);
+  const [searchInsight, setSearchInsight] = useState<any>(null);
   const [searching, setSearching] = useState(false);
   const [quickAdd, setQuickAdd] = useState("");
 
@@ -117,9 +118,17 @@ export default function DashboardV2() {
     const ticker = searchInput.trim().toUpperCase();
     if (!ticker) return;
     setSearching(true);
+    setSearchInsight(null);
     try {
-      const data = await apiFetch(`/api/opportunities?search=${ticker}`);
-      setSearchResult(data);
+      // Fire both in parallel: scanner zones + fundamentals + AI insight
+      const [scannerData, insightData] = await Promise.allSettled([
+        apiFetch(`/api/opportunities?search=${ticker}`),
+        apiFetch(`/api/fundamentals/insight?ticker=${ticker}`),
+      ]);
+      setSearchResult(scannerData.status === "fulfilled" ? scannerData.value : null);
+      const insight = insightData.status === "fulfilled" ? insightData.value : null;
+      // Keep the error message so the UI can show it instead of showing nothing
+      setSearchInsight(insight);
     } catch { showToast("Search failed"); }
     setSearching(false);
   };
@@ -217,39 +226,122 @@ export default function DashboardV2() {
         </div>
       </div>
 
-      {/* Search Result (overlay) */}
-      {searchResult && (
-        <div style={{ padding: "12px 24px", borderBottom: "1px solid #1e1e2e", background: "#0f0f18" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>
-              <span style={{ fontSize: 16, fontWeight: 700, color: "#e2e8f0" }}>{searchResult.search}</span>
-              {searchResult.owned && <span style={{ marginLeft: 8, background: "#065f46", color: "#4ade80", padding: "2px 8px", borderRadius: 3, fontSize: 10 }}>YOU OWN THIS</span>}
-              {!searchResult.inUniverse && <span style={{ marginLeft: 8, color: "#6b7280", fontSize: 10 }}>Not in scanner universe</span>}
+      {/* Search Result — fundamentals + AI insight + scanner zones */}
+      {(searchResult || searchInsight) && (
+        <div style={{ padding: "16px 24px", borderBottom: "2px solid #1e1e2e", background: "#0c0c16" }}>
+          {/* ── Header row ── */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 18, fontWeight: 700, color: "#e2e8f0" }}>
+                {searchResult?.search ?? searchInsight?.raw?.ticker}
+              </span>
+              {searchInsight?.raw?.companyName && (
+                <span style={{ color: "#a1a1aa", fontSize: 13 }}>{searchInsight.raw.companyName}</span>
+              )}
+              {searchInsight?.raw?.sector && (
+                <span style={{ background: "#1e1e2e", color: "#818cf8", padding: "2px 8px", borderRadius: 3, fontSize: 10 }}>
+                  {searchInsight.raw.sector}
+                </span>
+              )}
+              {searchResult?.owned && (
+                <span style={{ background: "#065f46", color: "#4ade80", padding: "2px 8px", borderRadius: 3, fontSize: 10 }}>YOU OWN THIS</span>
+              )}
+              {searching && <span style={{ color: "#52525b", fontSize: 11 }}>Loading AI...</span>}
             </div>
-            <button onClick={() => setSearchResult(null)} style={{ ...btnStyle, fontSize: 10 }}>Close</button>
+            <button onClick={() => { setSearchResult(null); setSearchInsight(null); }} style={{ ...btnStyle, fontSize: 10 }}>Close</button>
           </div>
-          {searchResult.scanResults?.length > 0 ? (
-            <div style={{ marginTop: 8 }}>
-              {searchResult.scanResults.slice(0, 3).map((r: any, i: number) => (
-                <div key={i} style={{ fontSize: 12, color: "#a1a1aa", padding: "3px 0" }}>
-                  {r.zone} zone | {r.direction} {r.timeframe} | {Number(r.distanceAtr).toFixed(1)} ATR away | ${Number(r.price).toFixed(2)}
+
+          <div style={{ display: "grid", gridTemplateColumns: searchInsight ? "220px 1fr 1fr" : "1fr", gap: 16 }}>
+            {/* ── Column 1: Raw numbers ── */}
+            {searchInsight?.raw && (
+              <div style={{ background: "#111119", borderRadius: 8, padding: 12, border: "1px solid #1e1e2e", fontSize: 11 }}>
+                <div style={{ ...sectionTitle, marginBottom: 8 }}>FUNDAMENTALS</div>
+                <FundStat label="Price" value={searchInsight.raw.price != null ? `$${Number(searchInsight.raw.price).toFixed(2)}` : "—"} />
+                <FundStat label="Market Cap" value={searchInsight.raw.marketCapFormatted ?? "—"} />
+                <FundStat label="P/E" value={searchInsight.raw.pe != null ? Number(searchInsight.raw.pe).toFixed(1) : "—"} />
+                <FundStat label="P/S" value={searchInsight.raw.ps != null ? Number(searchInsight.raw.ps).toFixed(1) : "—"} />
+                <FundStat label="Net Margin" value={searchInsight.raw.netMargin != null ? `${searchInsight.raw.netMargin}%` : "—"} highlight={searchInsight.raw.netMargin != null ? (searchInsight.raw.netMargin > 20 ? "good" : searchInsight.raw.netMargin > 0 ? "neutral" : "bad") : undefined} />
+                <FundStat label="Gross Margin" value={searchInsight.raw.grossMargin != null ? `${searchInsight.raw.grossMargin}%` : "—"} />
+                <FundStat label="ROE" value={searchInsight.raw.roe != null ? `${searchInsight.raw.roe}%` : "—"} highlight={searchInsight.raw.roe != null ? (searchInsight.raw.roe > 15 ? "good" : searchInsight.raw.roe > 0 ? "neutral" : "bad") : undefined} />
+                <FundStat label="Debt/Eq" value={searchInsight.raw.debtToEquity != null ? Number(searchInsight.raw.debtToEquity).toFixed(2) : "—"} />
+                <FundStat label="Beta" value={searchInsight.raw.beta != null ? Number(searchInsight.raw.beta).toFixed(2) : "—"} />
+                {searchInsight.raw.dividendYield != null && searchInsight.raw.dividendYield > 0 && (
+                  <FundStat label="Div Yield" value={`${searchInsight.raw.dividendYield}%`} highlight="good" />
+                )}
+                {searchInsight.raw.range52w && (
+                  <div style={{ marginTop: 6, paddingTop: 6, borderTop: "1px solid #1e1e2e", color: "#52525b" }}>
+                    52w: <span style={{ color: "#6b7280" }}>{searchInsight.raw.range52w}</span>
+                  </div>
+                )}
+                {searchInsight.position?.qty > 0 && (
+                  <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #1e1e2e" }}>
+                    <div style={{ ...sectionTitle, marginBottom: 6 }}>YOUR POSITION</div>
+                    <FundStat label="Shares" value={String(searchInsight.position.qty)} />
+                    <FundStat label="Avg Cost" value={`$${searchInsight.position.avgCost.toFixed(2)}`} />
+                    <FundStat label="P&L" value={`${searchInsight.position.unrealizedPnlPct >= 0 ? "+" : ""}${searchInsight.position.unrealizedPnlPct.toFixed(1)}%`} highlight={searchInsight.position.unrealizedPnlPct >= 0 ? "good" : "bad"} />
+                    <FundStat label="Portfolio" value={`${searchInsight.position.portfolioPct.toFixed(1)}%`} />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Column 2: AI Insight or error ── */}
+            {searchInsight?.error && !searchInsight?.raw && (
+              <div style={{ background: "#111119", borderRadius: 8, padding: 12, border: "1px solid #1e1e2e", gridColumn: "2 / span 2" }}>
+                <div style={{ ...sectionTitle, marginBottom: 8 }}>FUNDAMENTALS</div>
+                <div style={{ color: "#6b7280", fontSize: 12, lineHeight: 1.6 }}>{searchInsight.error}</div>
+              </div>
+            )}
+            {searchInsight?.aiInsight && (
+              <div style={{ background: "#0c1020", borderRadius: 8, padding: 12, border: "1px solid #1e3a5f" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                  <span style={{ fontSize: 9, color: "#818cf8", fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase" }}>AI INSIGHT</span>
+                  <span style={{ fontSize: 9, color: "#3b82f6", background: "#1e3a5f", padding: "1px 6px", borderRadius: 3 }}>Claude</span>
                 </div>
-              ))}
-              {searchResult.signals?.length > 0 && (
-                <div style={{ marginTop: 4 }}>
-                  {searchResult.signals.map((s: any, i: number) => (
-                    <span key={i} style={{ background: s.direction === "bull" ? "#065f46" : "#7f1d1d", color: "#e2e8f0", padding: "1px 6px", borderRadius: 3, fontSize: 10, marginRight: 4 }}>
-                      {s.direction === "bull" ? "↑" : "↓"} {s.signalType}
-                    </span>
+                <div style={{ color: "#c7d2fe", fontSize: 12, lineHeight: 1.7 }}>
+                  {searchInsight.aiInsight}
+                </div>
+                {searchInsight.raw?.description && (
+                  <div style={{ marginTop: 10, color: "#52525b", fontSize: 10, lineHeight: 1.6, borderTop: "1px solid #1e1e2e", paddingTop: 8 }}>
+                    {searchInsight.raw.description}...
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Column 3: Scanner zones ── */}
+            <div style={{ background: "#111119", borderRadius: 8, padding: 12, border: "1px solid #1e1e2e" }}>
+              <div style={{ ...sectionTitle, marginBottom: 8 }}>TECHNICAL SCANNER</div>
+              {searchResult?.scanResults?.length > 0 ? (
+                <>
+                  {searchResult.scanResults.slice(0, 4).map((r: any, i: number) => (
+                    <div key={i} style={{ fontSize: 11, color: "#a1a1aa", padding: "4px 0", borderTop: i > 0 ? "1px solid #1e1e2e" : "none" }}>
+                      <span style={{ color: r.zone === "ENTRY" ? "#4ade80" : "#facc15", fontWeight: 600 }}>{r.zone}</span>
+                      {" · "}{r.direction} {r.timeframe}
+                      {" · "}{Number(r.distanceAtr).toFixed(1)} ATR away
+                      {" · "}${Number(r.price).toFixed(2)}
+                    </div>
                   ))}
+                  {searchResult.signals?.length > 0 && (
+                    <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 4 }}>
+                      {searchResult.signals.map((s: any, i: number) => (
+                        <span key={i} style={{ background: s.direction === "bull" ? "#065f46" : "#7f1d1d", color: "#e2e8f0", padding: "2px 6px", borderRadius: 3, fontSize: 10 }}>
+                          {s.direction === "bull" ? "↑" : "↓"} {s.signalType}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div style={{ color: "#52525b", fontSize: 11, lineHeight: 1.6 }}>
+                  Not in scanner universe.
+                  <div style={{ marginTop: 6, color: "#3f3f46" }}>
+                    Run <span style={{ fontFamily: "monospace", color: "#818cf8" }}>npx tsx scripts/run-pipeline.ts {searchResult?.search ?? ""}</span> to add it.
+                  </div>
                 </div>
               )}
             </div>
-          ) : (
-            <div style={{ color: "#6b7280", fontSize: 12, marginTop: 8 }}>
-              No scanner data for {searchResult.search}. {!searchResult.inUniverse ? "Add it to the universe to start tracking." : "No entry/alert zones detected currently."}
-            </div>
-          )}
+          </div>
         </div>
       )}
 

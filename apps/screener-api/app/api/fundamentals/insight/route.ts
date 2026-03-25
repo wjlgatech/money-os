@@ -40,13 +40,17 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
-    const profileData = await profileRes.json();
-    const ratiosData = await ratiosRes.json();
-    const profile = profileData[0];
-    const ratios = ratiosData[0];
+    const profileData = await profileRes.json().catch(() => []);
+    const ratiosData = await ratiosRes.json().catch(() => []);
+    // FMP returns [] for unknown tickers, or {"Error Message": "..."} for invalid ones
+    const profile = Array.isArray(profileData) ? profileData[0] : null;
+    const ratios = Array.isArray(ratiosData) ? ratiosData[0] : null;
 
-    if (!profile) {
-      return apiError(`No FMP data for ${ticker}`, 404);
+    if (!profile || !profile.companyName) {
+      return apiError(
+        `No data for ${ticker}. FMP covers US stocks/ETFs. Crypto (BTC, ETH) and some international tickers are not supported on the free tier.`,
+        404
+      );
     }
 
     // ── 2. Get user's position in this ticker ──────────────────
