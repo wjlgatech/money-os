@@ -37,9 +37,10 @@ Triggers: I want to invest, I have money to invest, I have $X, make me money, gr
 → This is the GPS. The user states a destination, the navigator drives.
 
 ### Strategy Testing / "I Saw a Trading Strategy"
-Triggers: I saw a strategy, test this idea, I want to try, compare strategies, which strategy is better, backtest this, this YouTuber said, I read about, what if I buy when, trading strategy, test a thesis, try this approach, is this strategy good
+Triggers: I saw a strategy, I want to try, compare strategies, which strategy is better, backtest this, what if I buy when, trading strategy, try this approach, is this strategy good
 → **Route to: strategy-lab** (via /strategy-lab command)
-→ The user has an idea. Help them formalize it, test it, and know whether it works — before risking money.
+→ The user has a mechanical strategy (entry/exit rules). Help them formalize it, backtest it, and know whether it adds edge.
+→ NOTE: If the user describes a thesis (WHY to buy, not just WHEN) with multiple connected claims, route to thesis-pipeline instead.
 
 ### Portfolio Import / Connect Accounts
 Triggers: import my portfolio, here's my Fidelity, screenshot of my holdings, add my Coinbase, import from Moomoo, here's what I own, connect my accounts, import from Kraken, upload portfolio, here's my brokerage, sync my holdings
@@ -110,9 +111,11 @@ Triggers: what's approaching, watchlist, early warnings, what should I watch thi
 Triggers: any signals today, technical alerts, what fired, RSI signals, divergence alerts, MACD, signals
 → **Route to: security-screener** (via /signals command)
 
-### Investment Thesis
-Triggers: investment thesis, framework, align my portfolio, map my holdings, strategy to trades
-→ **Route to: thesis-to-trades**
+### Investment Thesis / "Test This Thesis" / "I Saw a Video About..."
+Triggers: investment thesis, framework, align my portfolio, map my holdings, strategy to trades, test this thesis, this YouTuber says, I found an investment thesis, evaluate and trade this idea, thesis pipeline, run the full thesis analysis, stress-test this idea, I read a newsletter about, someone told me to buy X because Y
+→ **Route to: thesis-pipeline** (via /thesis command)
+→ The full pipeline: quality gate → analyst debate → portfolio fit → sized trades → human approval.
+→ For simple portfolio alignment without quality scoring, thesis-to-trades is still available directly.
 
 ### Weekly Check-in
 Triggers: weekly pulse, how am I doing, weekly report, monthly summary, progress, financial update
@@ -135,7 +138,7 @@ Example: "Sounds like you want both a portfolio check and a tax optimization rev
 - Layer 1-2: Cash Flow (cash-flow, weekly-pulse, leak-scan)
 - Layer 3: Portfolio (portfolio-check, rebalance, macro-check, tax-harvest, screen, watchlist, signals)
 - Layer 4: Tax Strategy (tax-strategy, tax-review)
-- Layer 5: Wealth Creation (freedom, decide, life-event, generational, thesis-to-trades)
+- Layer 5: Wealth Creation (freedom, decide, life-event, generational, thesis-pipeline, strategy-lab)
 - Emotional Intelligence: courage, learn
 
 ## Profile Awareness

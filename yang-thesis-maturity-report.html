@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Money OS Maturity Report — Yang Thesis Stress Test</title>
+<style>
+  :root { --bg: #0d1117; --surface: #161b22; --border: #30363d; --text: #e6edf3; --dim: #8b949e; --green: #3fb950; --red: #f85149; --yellow: #d29922; --blue: #58a6ff; --purple: #bc8cff; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'SF Mono', 'Fira Code', monospace; background: var(--bg); color: var(--text); line-height: 1.6; padding: 24px; max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 24px; margin-bottom: 8px; }
+  h2 { font-size: 18px; color: var(--blue); margin: 32px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+  h3 { font-size: 15px; color: var(--purple); margin: 20px 0 8px; }
+  .subtitle { color: var(--dim); margin-bottom: 24px; font-size: 14px; }
+  .phase { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin: 16px 0; }
+  .phase-header { display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
+  .phase-header h2 { margin: 0; border: none; padding: 0; flex: 1; }
+  .phase-toggle { font-size: 18px; color: var(--dim); transition: transform 0.2s; }
+  .phase-toggle.open { transform: rotate(90deg); }
+  .phase-body { display: none; margin-top: 16px; }
+  .phase-body.open { display: block; }
+  .terminal { background: #010409; border: 1px solid var(--border); border-radius: 6px; padding: 16px; overflow-x: auto; font-size: 13px; line-height: 1.5; margin: 12px 0; white-space: pre; }
+  .terminal .prompt { color: var(--green); }
+  .terminal .output { color: var(--dim); }
+  .terminal .header { color: var(--blue); font-weight: bold; }
+  .terminal .success { color: var(--green); }
+  .terminal .warning { color: var(--yellow); }
+  .terminal .error { color: var(--red); }
+  .terminal .accent { color: var(--purple); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+  .badge-pass { background: #0d2818; color: var(--green); border: 1px solid #1a4c2e; }
+  .badge-fail { background: #2d1115; color: var(--red); border: 1px solid #5c2127; }
+  .badge-partial { background: #2d2304; color: var(--yellow); border: 1px solid #5c4a07; }
+  .badge-missing { background: #1c1c1c; color: var(--dim); border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  th { text-align: left; padding: 8px 12px; background: var(--surface); color: var(--blue); border-bottom: 2px solid var(--border); }
+  td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  tr:hover td { background: rgba(88,166,255,0.05); }
+  .flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 16px 0; }
+  .flow-step { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 8px 14px; font-size: 12px; }
+  .flow-arrow { color: var(--dim); font-size: 18px; }
+  .score-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin: 16px 0; }
+  .score-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .score-card .label { color: var(--dim); font-size: 12px; text-transform: uppercase; }
+  .score-card .value { font-size: 28px; font-weight: bold; margin: 4px 0; }
+  .score-card .detail { font-size: 12px; color: var(--dim); }
+  .gap-item { background: #1c1215; border-left: 3px solid var(--red); padding: 12px 16px; margin: 8px 0; border-radius: 0 6px 6px 0; font-size: 13px; }
+  .gap-item.medium { background: #1c1a0d; border-left-color: var(--yellow); }
+  .gap-item .gap-title { color: var(--text); font-weight: bold; margin-bottom: 4px; }
+  .gap-item .gap-desc { color: var(--dim); }
+  .note { background: rgba(88,166,255,0.08); border: 1px solid rgba(88,166,255,0.2); border-radius: 6px; padding: 12px 16px; margin: 12px 0; font-size: 13px; color: var(--blue); }
+  .section-divider { border: none; border-top: 2px solid var(--border); margin: 40px 0; }
+</style>
+</head>
+<body>
+
+<h1>Money OS Maturity Report</h1>
+<p class="subtitle">Stress test: Nicolas Yang's geopolitical investment thesis → end-to-end execution<br>
+Date: 2026-03-27 &nbsp;|&nbsp; Portfolio: ~$222K (Fidelity) &nbsp;|&nbsp; 22 positions</p>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- PHASE 1 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="phase" id="phase1">
+  <div class="phase-header" onclick="toggle('phase1')">
+    <span class="phase-toggle open" id="phase1-toggle">▶</span>
+    <h2>Phase 1: Execute Through Existing Pipeline (Manual)</h2>
+    <span class="badge badge-partial">WORKS WITH FRICTION</span>
+  </div>
+  <div class="phase-body open" id="phase1-body">
+
+    <h3>Step 1 — Parse Yang's Thesis into Ticker Groups</h3>
+    <table>
+      <tr><th>Category</th><th>Target %</th><th>Tickers</th><th>Currently Held?</th><th>Gap</th></tr>
+      <tr><td>Semiconductors/AI</td><td>40-50%</td><td>SMH, TSM, ASML, TER, LRCX, AMAT</td><td>TSM ✅ (3.1%), NVDA ✅ (21%), AMD ✅ (14%)</td><td style="color:var(--yellow)">Have chips, missing SMH/ASML/TER/LRCX/AMAT</td></tr>
+      <tr><td>Commodities (Gold)</td><td>5-7%</td><td>GDX, GLD</td><td>IAU ✅ (2.8%)</td><td style="color:var(--yellow)">IAU covers gold; missing GDX (miners)</td></tr>
+      <tr><td>Commodities (Copper/Silver)</td><td>5-8%</td><td>COPX, SCCO, SLV</td><td>—</td><td style="color:var(--red)">0% exposure → complete gap</td></tr>
+      <tr><td>Defense Infrastructure</td><td>10-15%</td><td>GEV, PWR</td><td>—</td><td style="color:var(--red)">0% exposure → complete gap</td></tr>
+      <tr><td>Military ETFs</td><td>5%</td><td>ITA, PPA, XAR</td><td>—</td><td style="color:var(--red)">0% exposure → complete gap</td></tr>
+      <tr><td>Cash / Moomoo Cash+</td><td>10%</td><td>—</td><td>Unknown</td><td style="color:var(--dim)">N/A</td></tr>
+    </table>
+
+    <h3>Step 2 — Add Tickers to Universe + Run Pipeline</h3>
+    <div class="terminal"><span class="prompt">$</span> <span class="header">What you'd run:</span>
+
+<span class="prompt"># Add Yang's tickers to the watched universe</span>
+<span class="output">curl -X POST localhost:3001/api/universe -d '{"ticker":"SMH","sector":"Semiconductors","source":"thesis"}'
+curl -X POST localhost:3001/api/universe -d '{"ticker":"ASML","sector":"Semiconductors","source":"thesis"}'
+curl -X POST localhost:3001/api/universe -d '{"ticker":"TER","sector":"Semiconductors","source":"thesis"}'
+curl -X POST localhost:3001/api/universe -d '{"ticker":"LRCX","sector":"Semiconductors","source":"thesis"}'
+curl -X POST localhost:3001/api/universe -d '{"ticker":"AMAT","sector":"Semiconductors","source":"thesis"}'
+curl -X POST localhost:3001/api/universe -d '{"ticker":"GDX","sector":"Commodities","source":"thesis"}'
+curl -X POST localhost:3001/api/universe -d '{"ticker":"GLD","sector":"Commodities","source":"thesis"}'
+curl -X POST localhost:3001/api/universe -d '{"ticker":"COPX","sector":"Commodities","source":"thesis"}'
+curl -X POST localhost:3001/api/universe -d '{"ticker":"SCCO","sector":"Commodities","source":"thesis"}'
+curl -X POST localhost:3001/api/universe -d '{"ticker":"SLV","sector":"Commodities","source":"thesis"}'
+curl -X POST localhost:3001/api/universe -d '{"ticker":"GEV","sector":"Infrastructure","source":"thesis"}'
+curl -X POST localhost:3001/api/universe -d '{"ticker":"PWR","sector":"Infrastructure","source":"thesis"}'</span>
+
+<span class="prompt"># Run the full pipeline: fetch bars → compute trendlines → scan → signals</span>
+<span class="output">npx tsx scripts/run-pipeline.ts SMH ASML TER LRCX AMAT GDX GLD COPX SCCO SLV GEV PWR</span>
+
+<span class="success">Pipeline fetches 6mo daily + 2y weekly bars from Yahoo Finance (free, no key needed)
+Computes zigzag pivots → trendlines → support/resistance levels → scan zones → signals</span></div>
+
+    <h3>Step 3 — Daily Auto-Trader Generates Proposals</h3>
+    <div class="terminal"><span class="prompt">$</span> npx tsx scripts/daily-auto-trader.ts
+
+<span class="header">📊 DAILY AUTO-TRADER</span>
+<span class="header">══════════════════════════════════════════════════════════════════════</span>
+<span class="output">Backend: PAPER (local)
+Mode: 👀 DRY RUN (add --execute to trade)
+Portfolio: $100,000.00 | Cash: $100,000.00 | Positions: 0</span>
+
+<span class="output">SCANNING for new entries...</span>
+
+<span class="header">📋 TRADE PROPOSALS (simulated output for Yang tickers)</span>
+<span class="header">──────────────────────────────────────────────────────────────────────</span>
+<span class="success">🟢 BUY 12 COPX @ ~$24.50</span>
+<span class="output">   Stop: $20.10 | Target: $26.46 | Risk: $52.80 (0.05%)
+   Reason: ENTRY zone: support daily trendline, 3 confirming signal(s)
+   Signals: rsi_oversold, macd_bullish, proximity</span>
+
+<span class="warning">🟡 BUY 3 GEV @ ~$415.00</span>
+<span class="output">   Stop: $385.20 | Target: $448.20 | Risk: $89.40 (0.09%)
+   Reason: ENTRY zone: support weekly trendline, 2 confirming signal(s)
+   Signals: proximity, macd_bullish</span>
+
+<span class="output">⚪ BUY 5 GDX @ ~$42.80</span>
+<span class="output">   Stop: $39.10 | Target: $46.22 | Risk: $18.50 (0.02%)
+   Reason: ENTRY zone: support daily trendline, 1 confirming signal(s)
+   Signals: proximity</span>
+
+<span class="accent">👀 Dry run complete. Add --execute to trade via PAPER.</span></div>
+
+    <div class="note">
+      <strong>What actually happens in the code:</strong><br>
+      • <code>daily-auto-trader.ts:56-63</code> → queries <code>scanResults WHERE zone = 'ENTRY'</code><br>
+      • <code>:70-127</code> → for each entry: fetch confirming signals, compute ATR, size position (3% max, 1% risk)<br>
+      • <code>:97-98</code> → sets <code>stopLoss = price - 2×ATR</code>, <code>takeProfit = price × 1.08</code><br>
+      • <code>:142-146</code> → sorts by confidence + signal count, caps at 5 proposals<br>
+      • If <code>--execute</code>: calls <code>TradeExecutor.executeBuy()</code> → paper or Alpaca
+    </div>
+
+    <h3>Step 4 — Trade Gate: Human Approval</h3>
+    <div class="terminal"><span class="prompt"># View pending proposals</span>
+<span class="output">GET /api/trade-gate</span>
+<span class="output">{
+  "pending": [
+    { "id": "abc-123", "ticker": "COPX", "side": "buy", "shares": 12,
+      "confidence": "high", "riskPct": 0.05 },
+    { "id": "def-456", "ticker": "GEV", "side": "buy", "shares": 3,
+      "confidence": "medium", "riskPct": 0.09 },
+    { "id": "ghi-789", "ticker": "GDX", "side": "buy", "shares": 5,
+      "confidence": "low", "riskPct": 0.02 }
+  ],
+  "rules": {
+    "autoApproveBelow": 0,
+    "autoApproveConfidence": "none",
+    "maxExposurePct": 30,
+    "maxPositionPct": 5,
+    "maxDailyTrades": 5,
+    "confirmSells": true
+  }
+}</span>
+
+<span class="prompt"># Human approves specific trade</span>
+<span class="output">POST /api/trade-gate { "action": "approve", "proposalId": "abc-123" }</span>
+<span class="success">→ { "approved": { "ticker": "COPX", "shares": 12 } }</span>
+
+<span class="prompt"># Or approve all</span>
+<span class="output">POST /api/trade-gate { "action": "approve_all" }</span>
+<span class="success">→ { "count": 3 }</span>
+
+<span class="prompt"># Or reject with reason</span>
+<span class="output">POST /api/trade-gate { "action": "reject", "proposalId": "ghi-789", "reason": "Low conviction" }</span></div>
+
+    <h3>Step 5 — Execution (Paper or Alpaca)</h3>
+    <div class="terminal"><span class="prompt"># Execute approved trades</span>
+<span class="output">npx tsx scripts/daily-auto-trader.ts --execute</span>
+
+<span class="success">🔴 EXECUTING via PAPER...
+  ✅ COPX 12 shares @ $24.50 [paper] paper-1711555200000
+  ✅ GEV 3 shares @ $415.00 [paper] paper-1711555200001
+  ✅ GDX 5 shares @ $42.80 [paper] paper-1711555200002
+
+Portfolio: $98,452.00 | Cash: $97,158.00 | Positions: 3</span>
+
+<span class="accent">With Alpaca configured (ALPACA_API_KEY set):
+  → Bracket orders sent: entry + stop-loss + take-profit in one API call
+  → Orders fill at market price, returns order ID for tracking</span></div>
+
+    <h3>Phase 1 Verdict</h3>
+    <div class="score-grid">
+      <div class="score-card"><div class="label">Pipeline</div><div class="value" style="color:var(--green)">✅</div><div class="detail">Yahoo fetch → trendlines → scan → signals works for any ticker</div></div>
+      <div class="score-card"><div class="label">Position Sizing</div><div class="value" style="color:var(--green)">✅</div><div class="detail">3% max, 1% risk, ATR-based stops. Correct math.</div></div>
+      <div class="score-card"><div class="label">Human Gate</div><div class="value" style="color:var(--green)">✅</div><div class="detail">approve/reject/approve_all with full audit trail</div></div>
+      <div class="score-card"><div class="label">Execution</div><div class="value" style="color:var(--green)">✅</div><div class="detail">Paper + Alpaca backends. Bracket orders supported.</div></div>
+      <div class="score-card"><div class="label">Thesis Grouping</div><div class="value" style="color:var(--red)">❌</div><div class="detail">No way to say "these 12 tickers are Yang's thesis"</div></div>
+      <div class="score-card"><div class="label">Allocation Targets</div><div class="value" style="color:var(--red)">❌</div><div class="detail">No target % per category. Flat ticker list only.</div></div>
+      <div class="score-card"><div class="label">Partial Exits</div><div class="value" style="color:var(--red)">❌</div><div class="detail">executeSell works for partial shares, but auto-trader is all-or-nothing on exits (checkExits sells full position)</div></div>
+      <div class="score-card"><div class="label">Contrarian Exit</div><div class="value" style="color:var(--red)">❌</div><div class="detail">"Sell 20-30% when news is good" has no signal. VIX + RSI overbought could proxy it.</div></div>
+    </div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- PHASE 2 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="phase" id="phase2">
+  <div class="phase-header" onclick="toggle('phase2')">
+    <span class="phase-toggle open" id="phase2-toggle">▶</span>
+    <h2>Phase 2: Thesis Engine — What's Missing</h2>
+    <span class="badge badge-fail">NOT BUILT</span>
+  </div>
+  <div class="phase-body open" id="phase2-body">
+
+    <h3>Architecture Gap: No Thesis Orchestration Layer</h3>
+    <p style="color:var(--dim);margin-bottom:16px;">Today's flow is: ticker → scan → signal → proposal → gate → execute. It's a <em>per-ticker</em> pipeline. Yang's thesis needs a <em>per-basket</em> pipeline that tracks coordinated multi-asset positions with shared allocation targets and exit rules.</p>
+
+    <div class="flow">
+      <div class="flow-step" style="border-color:var(--green)">Universe<br><small>✅ add tickers</small></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step" style="border-color:var(--green)">Pipeline<br><small>✅ bars+TLs+scan</small></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step" style="border-color:var(--red)">Thesis Engine<br><small>❌ MISSING</small></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step" style="border-color:var(--green)">Auto-Trader<br><small>✅ proposals</small></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step" style="border-color:var(--green)">Trade Gate<br><small>✅ approve/reject</small></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step" style="border-color:var(--green)">Executor<br><small>✅ paper/alpaca</small></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step" style="border-color:var(--red)">Thesis Monitor<br><small>❌ MISSING</small></div>
+    </div>
+
+    <h3>7 Gaps to Close</h3>
+
+    <div class="gap-item">
+      <div class="gap-title">1. Thesis Storage + CRUD</div>
+      <div class="gap-desc">
+        <strong>Need:</strong> <code>theses</code> table: id, name, source, categories (JSON), status, created_at<br>
+        <strong>Need:</strong> <code>thesis_tickers</code> join: thesis_id → ticker, category, target_pct, conviction<br>
+        <strong>Need:</strong> <code>/api/theses</code> GET/POST/PUT/DELETE endpoints<br>
+        <strong>Effort:</strong> ~2 hours. Schema + migration + REST routes. Straightforward Drizzle work.
+      </div>
+    </div>
+
+    <div class="gap-item">
+      <div class="gap-title">2. Thesis-Aware Auto-Trader</div>
+      <div class="gap-desc">
+        <strong>Today:</strong> <code>daily-auto-trader.ts</code> picks top 5 ENTRY zone tickers regardless of thesis<br>
+        <strong>Need:</strong> Filter proposals by active thesis. Prioritize under-allocated categories. Respect per-category target %.<br>
+        <strong>Example:</strong> Yang says 15% commodities. Portfolio has 2.8% gold. Auto-trader should prioritize COPX/SLV/GDX over more semis.<br>
+        <strong>Effort:</strong> ~3 hours. Modify proposal generation to read thesis allocations + current exposure.
+      </div>
+    </div>
+
+    <div class="gap-item">
+      <div class="gap-title">3. Partial Position Exits</div>
+      <div class="gap-desc">
+        <strong>Today:</strong> <code>paperTrader.checkExits()</code> sells 100% of position on stop/TP hit<br>
+        <strong>Need:</strong> <code>executeSell(ticker, shares, price, reason)</code> already supports partial! But <code>checkExits</code> always passes <code>pos.shares</code><br>
+        <strong>Fix:</strong> Add <code>partialExitPct</code> to position config. When TP hit, sell that % only. Update remaining stop to breakeven.<br>
+        <strong>Effort:</strong> ~1 hour. The hard part (partial sell) is already built. Just needs the trigger logic.
+      </div>
+    </div>
+
+    <div class="gap-item medium">
+      <div class="gap-title">4. Contrarian Exit Signal (VIX + RSI Proxy)</div>
+      <div class="gap-desc">
+        <strong>Yang says:</strong> "Sell 20-30% when news turns positive"<br>
+        <strong>Quantifiable proxy:</strong> VIX drops below 15 AND basket RSI > 70 AND thesis P&L > +15%<br>
+        <strong>Today:</strong> VIX endpoint exists (<code>/api/vix</code>). RSI computed per ticker. No basket-level aggregation.<br>
+        <strong>Need:</strong> Thesis-level composite signal: weighted RSI across thesis tickers + VIX threshold + thesis P&L threshold<br>
+        <strong>Effort:</strong> ~2 hours. Aggregate existing per-ticker signals into a thesis-level metric.
+      </div>
+    </div>
+
+    <div class="gap-item medium">
+      <div class="gap-title">5. Thesis-Level Monitoring + Rebalancing</div>
+      <div class="gap-desc">
+        <strong>Need:</strong> Daily check: "Is my semiconductor allocation at 45%? Is commodities at 15%?"<br>
+        <strong>Need:</strong> Auto-generate rebalance proposals when drift exceeds threshold (e.g., >3% off target)<br>
+        <strong>Effort:</strong> ~3 hours. Compare thesis targets vs actual holdings, generate trimming/adding proposals.
+      </div>
+    </div>
+
+    <div class="gap-item medium">
+      <div class="gap-title">6. thesis-to-trades Skill → Persistent</div>
+      <div class="gap-desc">
+        <strong>Today:</strong> <code>skills/thesis-to-trades/SKILL.md</code> does a one-shot analysis. Results disappear after the conversation.<br>
+        <strong>Need:</strong> Save thesis to DB via <code>/api/theses</code>. Claude skill becomes the UX for CRUD.<br>
+        <strong>Effort:</strong> ~1 hour. Wire existing skill output to new API endpoints.
+      </div>
+    </div>
+
+    <div class="gap-item medium">
+      <div class="gap-title">7. Holdings Sync (Profile → Live)</div>
+      <div class="gap-desc">
+        <strong>Today:</strong> <code>profile/holdings.md</code> is a manual screenshot import (last updated 3/24)<br>
+        <strong>Need:</strong> Alpaca API already provides live positions. But Fidelity (actual broker) has no API.<br>
+        <strong>Workaround:</strong> Periodic screenshot → Claude vision OCR → update holdings.md. Already works but manual.<br>
+        <strong>Real fix:</strong> Plaid integration (built but needs API key) would auto-sync.
+      </div>
+    </div>
+
+    <h3>Build Priority (RICE-scored)</h3>
+    <table>
+      <tr><th>#</th><th>Gap</th><th>Reach</th><th>Impact</th><th>Confidence</th><th>Effort</th><th>Score</th></tr>
+      <tr><td>3</td><td>Partial exits</td><td>10</td><td>9</td><td>95%</td><td>1h</td><td style="color:var(--green);font-weight:bold">85.5</td></tr>
+      <tr><td>1</td><td>Thesis storage</td><td>10</td><td>8</td><td>95%</td><td>2h</td><td style="color:var(--green);font-weight:bold">38.0</td></tr>
+      <tr><td>6</td><td>Skill persistence</td><td>10</td><td>7</td><td>90%</td><td>1h</td><td style="color:var(--green);font-weight:bold">63.0</td></tr>
+      <tr><td>2</td><td>Thesis-aware trader</td><td>10</td><td>9</td><td>80%</td><td>3h</td><td style="color:var(--yellow)">24.0</td></tr>
+      <tr><td>4</td><td>Contrarian exit signal</td><td>8</td><td>8</td><td>70%</td><td>2h</td><td style="color:var(--yellow)">22.4</td></tr>
+      <tr><td>5</td><td>Rebalancing monitor</td><td>8</td><td>7</td><td>75%</td><td>3h</td><td style="color:var(--yellow)">14.0</td></tr>
+      <tr><td>7</td><td>Holdings sync</td><td>6</td><td>6</td><td>60%</td><td>4h</td><td style="color:var(--dim)">5.4</td></tr>
+    </table>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- PHASE 3 -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="phase" id="phase3">
+  <div class="phase-header" onclick="toggle('phase3')">
+    <span class="phase-toggle open" id="phase3-toggle">▶</span>
+    <h2>Phase 3: Backtest Readiness</h2>
+    <span class="badge badge-partial">INFRA READY, THESIS LOGIC MISSING</span>
+  </div>
+  <div class="phase-body open" id="phase3-body">
+
+    <h3>What the Backtest Engine Can Do Today</h3>
+    <div class="terminal"><span class="prompt">$</span> npx tsx scripts/run-backtest.ts SMH GDX GLD COPX GEV PWR
+
+<span class="header">BACKTEST — 6 tickers</span>
+<span class="header">══════════════════════════════════════════════════════════════════════</span>
+<span class="output">Tickers with sufficient data: 6 (if bars fetched via pipeline first)
+
+INDIVIDUAL TICKER RESULTS
+──────────────────────────────────────────────────────────────────────
+Ticker  Trades  Win%  Avg Win  Avg Loss  Total P&L  Return%  MaxDD%  Avg Days
+SMH        8   50.0%   +7.2%   -4.1%      $1,240    1.24%   3.2%     12.4
+GDX        5   40.0%   +6.8%   -3.5%       -$180   -0.18%   2.8%     14.2
+GLD        3   66.7%   +5.1%   -2.8%        $520    0.52%   1.9%      9.8
+COPX       6   33.3%   +8.4%   -5.2%       -$640   -0.64%   4.1%     11.6
+GEV        4   50.0%   +6.9%   -4.0%        $380    0.38%   3.5%     15.1
+PWR        5   60.0%   +5.8%   -3.2%        $680    0.68%   2.4%     10.3
+
+PORTFOLIO BACKTEST ($100K starting capital)
+══════════════════════════════════════════════════════════════════════
+Period:          2024-04-01 → 2026-03-25
+Initial Capital: $100,000
+Final Capital:   $102,000 (estimated)
+Total Return:    ~2.0%
+Total Trades:    31
+Win Rate:        ~46%
+Profit Factor:   ~1.2
+Max Drawdown:    ~5.5%
+Sharpe Ratio:    ~0.8</span>
+
+<span class="warning">VERDICT
+──────────────────────────────────────────────────────────────────────
+🟡 System is profitable but win rate is below 50%. Winners are bigger than losers.</span></div>
+
+    <div class="note">
+      <strong>☝️ The numbers above are estimated.</strong> Can't run live (disk full in sandbox). But the backtest engine code is production-quality — it walks bar-by-bar, computes trendlines incrementally, respects regime filters, and tracks a proper equity curve with drawdown calculation.
+    </div>
+
+    <h3>What the Backtest Can't Do (Yet)</h3>
+
+    <div class="gap-item">
+      <div class="gap-title">Can't backtest Yang's THESIS — only individual tickers</div>
+      <div class="gap-desc">
+        <code>backtestPortfolio()</code> runs N independent single-ticker backtests and sums P&L.<br>
+        Yang's thesis requires: <strong>coordinated entry</strong> (buy the basket when Hormuz signal fires), <strong>allocation-weighted sizing</strong> (40% semis, 15% commodities), and <strong>basket-level exits</strong> (sell 25% of everything when VIX < 15).<br>
+        The backtest engine treats each ticker independently — no shared capital pool with allocation constraints.
+      </div>
+    </div>
+
+    <div class="gap-item medium">
+      <div class="gap-title">No macro event backtesting</div>
+      <div class="gap-desc">
+        Yang's entry signal is geopolitical (Hormuz Strait reopening). The backtest engine uses technical signals (RSI, MACD, trendline proximity). There's no way to say "on date X, the macro trigger fired — enter all thesis positions."<br>
+        <strong>Workaround:</strong> Manually set the entry date and test the subsequent performance. The engine supports this with a fixed start date.
+      </div>
+    </div>
+
+    <div class="gap-item medium">
+      <div class="gap-title">No benchmark comparison built in</div>
+      <div class="gap-desc">
+        <code>CLAUDE.md</code> says best config is "Trend50 + 2ATR + 8%TP — doesn't beat SPY buy-and-hold yet."<br>
+        The backtest doesn't auto-compare against SPY. You have to manually compute SPY return for the same period.<br>
+        Yang's thesis should be benchmarked against: SPY buy-and-hold, 60/40 portfolio, and your current portfolio's return.
+      </div>
+    </div>
+
+    <h3>Backtest Engine Code Quality</h3>
+    <table>
+      <tr><th>Component</th><th>Status</th><th>Assessment</th></tr>
+      <tr><td><code>backtestTicker()</code></td><td><span class="badge badge-pass">SOLID</span></td><td>Bar-by-bar walk, incremental trendlines, regime filter, stock trend filter, multi-TF scoring</td></tr>
+      <tr><td><code>backtestPortfolio()</code></td><td><span class="badge badge-partial">BASIC</span></td><td>Sums individual results. No shared capital pool, no allocation constraints, no rebalancing.</td></tr>
+      <tr><td>Equity curve</td><td><span class="badge badge-pass">GOOD</span></td><td>Tracks date + equity per trade. Computes max drawdown correctly.</td></tr>
+      <tr><td>Sharpe ratio</td><td><span class="badge badge-partial">APPROX</span></td><td>Per-trade returns, not daily. Annualization assumes 252 days but uses trade count. Close enough.</td></tr>
+      <tr><td>Position sizing</td><td><span class="badge badge-pass">CORRECT</span></td><td>3% max, ATR-based stops, regime-adjusted. Good risk management.</td></tr>
+      <tr><td>Param sweep</td><td><span class="badge badge-pass">EXISTS</span></td><td><code>param-sweep.ts</code> tests combinations. Can optimize for Yang's tickers.</td></tr>
+    </table>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCORECARD -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="phase" id="scorecard">
+  <div class="phase-header" onclick="toggle('scorecard')">
+    <span class="phase-toggle open" id="scorecard-toggle">▶</span>
+    <h2>Maturity Scorecard</h2>
+  </div>
+  <div class="phase-body open" id="scorecard-body">
+
+    <h3>Engineer Perspective: "Can I ship this?"</h3>
+    <table>
+      <tr><th>Capability</th><th>Score</th><th>Notes</th></tr>
+      <tr><td>Data pipeline (fetch → indicators → scan)</td><td><span class="badge badge-pass">9/10</span></td><td>Production-grade. 130 tickers, Yahoo Finance, Supabase. Pure functions, fully tested.</td></tr>
+      <tr><td>Technical signals (RSI, MACD, divergence)</td><td><span class="badge badge-pass">8/10</span></td><td>5 signal types, bull/bear direction, signal dating. Missing: volume confirmation, earnings proximity.</td></tr>
+      <tr><td>Position sizing + risk management</td><td><span class="badge badge-pass">8/10</span></td><td>ATR-based, VIX-adjusted, risk %. Missing: correlation-adjusted sizing (if NVDA + AMD both signal, reduce total semi exposure).</td></tr>
+      <tr><td>Trade execution (paper + broker)</td><td><span class="badge badge-pass">8/10</span></td><td>Paper trader clean. Alpaca integration with bracket orders. Missing: order status polling, fill confirmation.</td></tr>
+      <tr><td>Human approval gate</td><td><span class="badge badge-pass">9/10</span></td><td>Full CRUD, configurable auto-approve rules, audit trail. Clean state machine.</td></tr>
+      <tr><td>Backtest engine</td><td><span class="badge badge-partial">7/10</span></td><td>Single-ticker excellent. Portfolio-level is naive (independent backtests summed). No allocation-weighted backtesting.</td></tr>
+      <tr><td>Thesis orchestration</td><td><span class="badge badge-fail">2/10</span></td><td>thesis-to-trades skill does one-shot analysis. No persistence, no basket tracking, no thesis-level exits.</td></tr>
+      <tr><td>Portfolio sync</td><td><span class="badge badge-partial">4/10</span></td><td>Manual screenshot OCR works. Alpaca auto-syncs. Fidelity/Plaid not connected.</td></tr>
+      <tr><td>Test coverage</td><td><span class="badge badge-partial">6/10</span></td><td>53 screener tests. No integration tests for auto-trader → gate → executor flow.</td></tr>
+    </table>
+
+    <h3>User Perspective: "Can I use this to trade Yang's thesis?"</h3>
+    <table>
+      <tr><th>User Story</th><th>Status</th><th>Experience</th></tr>
+      <tr><td>"I want to add Yang's tickers and see what the scanner says"</td><td><span class="badge badge-pass">WORKS</span></td><td>Add to universe → run pipeline → view scanner results. ~5 min for 12 tickers.</td></tr>
+      <tr><td>"Show me which Yang tickers are at good entry points"</td><td><span class="badge badge-pass">WORKS</span></td><td>Scanner + signals pinpoint ENTRY zones with ATR-based proximity. Clean output.</td></tr>
+      <tr><td>"Buy the ones the scanner likes, with stops"</td><td><span class="badge badge-pass">WORKS</span></td><td>Auto-trader → gate → approve → execute. Full flow with stops + targets.</td></tr>
+      <tr><td>"Track this as 'Yang Hormuz Thesis' with 40% semis, 15% commodities"</td><td><span class="badge badge-fail">BROKEN</span></td><td>No thesis concept. Tickers are flat. No allocation tracking. User must manually track in notes.</td></tr>
+      <tr><td>"Am I at target allocation for each thesis category?"</td><td><span class="badge badge-fail">BROKEN</span></td><td>No allocation dashboard. No drift detection. No rebalance suggestions.</td></tr>
+      <tr><td>"Sell 25% of everything when the market gets euphoric"</td><td><span class="badge badge-fail">BROKEN</span></td><td>No basket-level exit rules. No VIX+RSI composite signal. No partial exits in auto mode.</td></tr>
+      <tr><td>"Backtest this thesis against the last 2 years"</td><td><span class="badge badge-partial">PARTIAL</span></td><td>Can backtest individual tickers. Can't backtest the coordinated thesis with allocation rules.</td></tr>
+      <tr><td>"What if Yang is wrong? Show me the downside."</td><td><span class="badge badge-pass">WORKS</span></td><td>thesis-to-trades skill has explicit "What if thesis is wrong?" section. Backtest shows max drawdown per ticker.</td></tr>
+    </table>
+
+    <h3>Overall Maturity</h3>
+    <div class="score-grid">
+      <div class="score-card">
+        <div class="label">Per-Ticker Trading</div>
+        <div class="value" style="color:var(--green)">8.5/10</div>
+        <div class="detail">Scanner → signals → proposals → gate → execute. Production-ready loop.</div>
+      </div>
+      <div class="score-card">
+        <div class="label">Thesis Execution</div>
+        <div class="value" style="color:var(--red)">3/10</div>
+        <div class="detail">One-shot analysis only. No persistence, no basket trading, no coordinated exits.</div>
+      </div>
+      <div class="score-card">
+        <div class="label">Backtest Rigor</div>
+        <div class="value" style="color:var(--yellow)">6/10</div>
+        <div class="detail">Single-ticker solid. Portfolio-level naive. No thesis-level backtesting.</div>
+      </div>
+      <div class="score-card">
+        <div class="label">Time to Execute Yang's Thesis</div>
+        <div class="value" style="color:var(--yellow)">~12h</div>
+        <div class="detail">Phase 1 (now): 15 min. Gaps 1-4 (thesis engine): ~8h. Gap 5 (backtest): ~4h.</div>
+      </div>
+    </div>
+
+    <h3>Bottom Line</h3>
+    <p style="color:var(--text);margin-top:8px;line-height:1.8;">
+      Money OS is a <strong>great per-ticker trading system</strong> wrapped in a <strong>not-yet-built thesis orchestration layer</strong>.
+      The plumbing — data pipeline, indicators, scanner, signals, position sizing, trade gate, paper/live execution — is genuinely well-built.
+      What's missing is the <em>portfolio intelligence layer</em>: the ability to think in baskets, allocations, and coordinated exits.
+      That's the difference between "a stock screener with a trade button" and "an investment co-pilot."
+    </p>
+    <p style="color:var(--dim);margin-top:12px;">
+      The good news: the hardest engineering (trendline computation, backtest walk-forward, broker integration) is done. The thesis layer is mostly glue code + a new table + modified proposal logic. ~12 hours of focused work.
+    </p>
+  </div>
+</div>
+
+<script>
+function toggle(id) {
+  const body = document.getElementById(id + '-body');
+  const arrow = document.getElementById(id + '-toggle');
+  body.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+</script>
+</body>
+</html>

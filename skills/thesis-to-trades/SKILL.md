@@ -13,6 +13,33 @@ version: 0.1.0
 
 Bridge the gap between investment ideas and portfolio action. Take an investment thesis, framework, or strategy document and convert it into a concrete gap analysis with specific trades.
 
+## Upstream Quality Gate
+
+**Before running thesis-to-trades, check if a thesis quality analysis already exists.**
+
+1. Check `profile/theses/` for a saved analysis of this thesis
+2. If found: read the quality scores and use them to control position sizing (see Step 4)
+3. If NOT found: recommend running `thesis-quality-analyzer` first
+
+If the user wants to skip the quality check, proceed — but note in the output: "This thesis has not been stress-tested. Position sizes are at standard levels. Run /thesis-quality-analyzer to get conviction-weighted sizing."
+
+**Quality-Weighted Position Sizing:**
+
+When a thesis quality analysis exists, multiply standard position sizes by the claim score:
+
+| Claim Score | Position Multiplier | Effect |
+|-------------|-------------------|--------|
+| 16-20 (A-grade claim) | 1.0x | Full conviction size |
+| 12-15 (B-grade claim) | 0.7x | Reduced — decent but not proven |
+| 8-11 (C-grade claim) | 0.4x | Small, exploratory — more narrative than data |
+| 4-7 (D-grade claim) | 0x | Do not trade — rejected by quality gate |
+| REJECT action | 0x | Explicitly excluded — note in output |
+
+For claims with HEDGE action: apply the position cap and stop-loss from the quality analysis.
+For claims with MONITOR action: do not generate trades yet — generate watchlist entries instead.
+
+This means the trade plan automatically concentrates capital on the strongest claims and avoids the weakest, even within the same thesis.
+
 ## Process
 
 ### Step 1: Parse the Thesis
@@ -91,12 +118,27 @@ Always include a "What if the thesis is wrong?" section with specific risks.
 THESIS ALIGNMENT REPORT
 
 Thesis: [Name/Source]
+Quality: [Grade from thesis-quality-analyzer, or "Not analyzed" if skipped]
 Portfolio: $XXX,XXX across X accounts
 
 ALIGNMENT SCORE: X/10
 
 CATEGORY BREAKDOWN:
-| Category | Thesis Target | Current | Gap | Action |
+| Category | Thesis Target | Current | Gap | Claim Grade | Size Multiplier | Action |
+
+TRADE SEQUENCE (quality-weighted):
+  Priority 1 — High-conviction claims (A/B grade):
+  - Buy [Ticker]: $X,XXX (full size) — Claim: "[claim summary]"
+
+  Priority 2 — Moderate claims (C grade, exploratory only):
+  - Buy [Ticker]: $X,XXX (0.4x size) — Claim: "[claim summary]"
+  - ⚠️ Set stop-loss at -[X]% — this claim is speculative
+
+  DO NOT TRADE — Rejected claims:
+  - [Ticker]: Claim "[summary]" scored [X]/20 — REJECTED by quality gate
+
+  WATCHLIST ONLY — Monitor claims (not ready to trade):
+  - [Ticker]: Waiting for [signal] to confirm. Watch [metric] at [frequency].
 
 MISSING EXPOSURES (highest priority):
 - [Category]: $X,XXX needed → Buy [Ticker] at $X,XXX
@@ -107,11 +149,10 @@ OVER-EXPOSURES:
 UNALIGNED POSITIONS:
 - [Ticker]: $X,XXX — no thesis support → [Sell / Keep as hedge]
 
-TRADE SEQUENCE:
-[Ordered list of specific trades]
-
 THESIS RISK FACTORS:
+- Kill assumption: [from quality analysis]
 - If [assumption] is wrong: [impact on portfolio]
+- Max loss if ALL claims fail: $X,XXX ([Y]% of portfolio)
 ```
 
 ## Profile Integration

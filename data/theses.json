@@ -1,0 +1,107 @@
+{
+  "theses": [
+    {
+      "id": "67030b02-a8c6-4ec4-8dcb-e43518669b4e",
+      "name": "Yang Hormuz Strait Reopening",
+      "source": "Nicolas Yang (YouTube)",
+      "coreClaim": "Hormuz Strait reopening triggers oil normalization, benefiting semis, commodities, defense infra. Sell on good news.",
+      "grade": "C",
+      "qualityScore": 11.7,
+      "sourceModifier": -2,
+      "adjustedScore": 9.7,
+      "killAssumption": "Claim #1: Hormuz Strait reopening \u2014 if deal talks collapse, exit all thesis positions",
+      "claims": [
+        {
+          "id": 1,
+          "claim": "Hormuz Strait reopening will normalize oil prices",
+          "ticker": "XLE, USO",
+          "scores": {
+            "testability": 5,
+            "mechanism": 4,
+            "falsifiability": 4,
+            "timing": 4,
+            "total": 17
+          },
+          "action": "VERIFY",
+          "sizeMultiplier": 0.7
+        },
+        {
+          "id": 2,
+          "claim": "Lower oil prices boost semiconductor stocks",
+          "ticker": "SMH, NVDA, AMD, TSM",
+          "scores": {
+            "testability": 4,
+            "mechanism": 4,
+            "falsifiability": 4,
+            "timing": 3,
+            "total": 15
+          },
+          "action": "VERIFY",
+          "sizeMultiplier": 0.7
+        },
+        {
+          "id": 3,
+          "claim": "Semiconductor demand surges from AI data center buildout",
+          "ticker": "NVDA, AMD, TSM",
+          "scores": {
+            "testability": 4,
+            "mechanism": 4,
+            "falsifiability": 3,
+            "timing": 3,
+            "total": 14
+          },
+          "action": "VERIFY",
+          "sizeMultiplier": 0.7
+        },
+        {
+          "id": 4,
+          "claim": "Gold drops as Arab nations sell reserves to fund development",
+          "ticker": "GLD",
+          "scores": {
+            "testability": 2,
+            "mechanism": 1,
+            "falsifiability": 1,
+            "timing": 1,
+            "total": 5
+          },
+          "action": "REJECT",
+          "sizeMultiplier": 0.0
+        },
+        {
+          "id": 5,
+          "claim": "Copper and silver surge on AI infrastructure demand",
+          "ticker": "COPX, SLV",
+          "scores": {
+            "testability": 3,
+            "mechanism": 3,
+            "falsifiability": 3,
+            "timing": 2,
+            "total": 11
+          },
+          "action": "HEDGE",
+          "sizeMultiplier": 0.4
+        },
+        {
+          "id": 6,
+          "claim": "Sell everything on the good news event (Hormuz announcement)",
+          "ticker": "ALL",
+          "scores": {
+            "testability": 2,
+            "mechanism": 2,
+            "falsifiability": 2,
+            "timing": 2,
+            "total": 8
+          },
+          "action": "REJECT",
+          "sizeMultiplier": 0.0
+        }
+      ],
+      "status": "scored",
+      "createdAt": "2026-04-07T17:34:31.897400",
+      "updatedAt": "2026-04-07T17:34:31.897402",
+      "tradeIds": [],
+      "reviewDate": "2026-05-07",
+      "notes": "[2026-04-07] Initial analysis via /thesis pipeline. C-grade thesis \u2014 recommended paper trade first."
+    }
+  ]
+}

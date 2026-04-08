@@ -40,3 +40,4 @@ campaign-dashboard.html
 
 # Office lock files
 .~lock.*
+.gstack/

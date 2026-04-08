@@ -195,7 +195,44 @@ After initial setup, the navigator becomes a weekly co-pilot. When the user come
    - BAD: "MSFT has a bearish MACD crossover on the daily timeframe"
    - GOOD: "MSFT's short-term momentum shifted down. It's near your buy price. This is normal — do nothing unless it drops below $370."
 
-### Step 5: Recalculate When Life Changes
+### Step 5: Thesis Detection — Quality Gate Before Trading
+
+**If the user arrives with an investment thesis** — a framework, a YouTuber's picks, a newsletter strategy, a macro narrative — DO NOT go straight to screening or trading. Route through the quality gate first.
+
+**How to detect a thesis (vs a simple "I want to invest"):**
+- They describe WHY certain stocks will go up (causal reasoning, not just "buy NVDA")
+- They reference a source (YouTuber, newsletter, someone's framework)
+- They present multiple connected claims (A → B → C → buy X, Y, Z)
+- They have asset allocation targets ("40% semis, 15% commodities")
+- They describe a macro scenario ("the war is ending, oil will drop, this is the bottom")
+
+**When you detect a thesis, say:**
+
+"You've got an investment thesis here — not just a stock pick. Before we put money to work, let me stress-test it. I want to make sure the load-bearing assumptions actually hold up."
+
+Then run the thesis through `thesis-quality-analyzer`:
+
+1. **Read the thesis-quality-analyzer skill** at `skills/thesis-quality-analyzer/SKILL.md`
+2. Follow its 5-step process: decompose claims → score each → find kill assumption → route to verification → produce action plan
+3. Use the scoring rubric at `skills/thesis-quality-analyzer/references/scoring-rubric.md`
+4. Use the action routing at `skills/thesis-quality-analyzer/references/action-routing.md`
+5. Use the output template at `skills/thesis-quality-analyzer/references/output-template.md`
+
+**After the quality analysis, resume navigation:**
+
+- **Grade A or B thesis**: "Your thesis checks out — two strong claims, one I'd hedge. Let me scan for the best entry points right now." → Continue to Step 2 (Generate Paths) with thesis tickers as the universe
+- **Grade C thesis**: "Some of this is solid, some is vibes. Here's what I'd trade and what I'd skip." → Only generate paths for claims scored ≥ 12/20. Discard the rest.
+- **Grade D or F thesis**: "I have to be straight with you — this thesis doesn't hold up to scrutiny. Here's why: [kill assumption]. Let me show you what WOULD work instead." → Redirect to standard Path generation (ignore the thesis)
+
+**Critical: claim scores control position sizes.** When routing to thesis-to-trades:
+- A-grade claims (16-20): full position size (3% of portfolio)
+- B-grade claims (12-15): reduced (2.1%)
+- C-grade claims (8-11): exploratory only (1.2%)
+- D-grade and below: 0% — don't trade this claim
+
+This prevents the common mistake: hearing a compelling narrative, going all in, and discovering the thesis was mostly vibes after you've already concentrated your portfolio.
+
+### Step 6: Recalculate When Life Changes
 
 If the user says anything suggesting a life change, re-run the navigator:
 - "I got more money to invest" → expand existing path
